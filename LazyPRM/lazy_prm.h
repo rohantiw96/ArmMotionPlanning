@@ -4,9 +4,9 @@
 
 typedef std::unordered_map<std::vector<double>,std::vector<std::vector<double>>,container_hash<std::vector<double>>> component_map;
 
-class PRM: public SamplingPlanners{
+class LAZYPRM: public SamplingPlanners{
     public:
-        PRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs,double epsilon,int num_samples,int num_iteration);
+        LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs);
         void plan(double ***plan,int *planlength);
         void buildRoadMap();
         double returnPathCost();

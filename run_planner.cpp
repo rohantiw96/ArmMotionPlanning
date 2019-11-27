@@ -1,6 +1,9 @@
 #include <math.h>
 #include "mex.h"
 #include <time.h>
+#include "sampling_planner.h"
+#include "lazy_prm.h"
+
 
 /* Input Arguments */
 #define	MAP_IN      prhs[0]
@@ -9,10 +12,6 @@
 #define	PLANNER_ID_IN     prhs[3]
 
 /* Planner Ids */
-#define RRTPLANNER  0
-#define RRTCONNECT  1
-#define RRTSTAR     2
-#define PRMPLANNER  3
 
 /* Output Arguments */
 #define	PLAN_OUT	plhs[0]
@@ -90,6 +89,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     // SamplingPlanner planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,samples,num_iterations);
     // planner.plan(&plan, &planlength);
+    
+    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    planner.plan(&plan, &planlength);
+    cost = planner.returnPathCost();
+    num_vertices = planner.returnNumberOfVertices();
 
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> time_span = t2 - t1;

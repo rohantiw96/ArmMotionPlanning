@@ -59,10 +59,10 @@ protected:
     void get_bresenham_parameters(const int p1x, const int p1y, const int p2x, const int p2y, bresenham_param_t *params);
     void get_current_point(bresenham_param_t *params, int *x, int *y);
     int get_next_point(bresenham_param_t *params);
-    int IsValidLineSegment(const double x0, const double y0, const double x1, const double y1);
-    int IsValidArmConfiguration(std::vector<double> angles);
+    int IsValidLineSegment(const double x0, const double y0, const double x1, const double y1,bool checkCollision);
+    int IsValidArmConfiguration(std::vector<double> angles,bool checkCollision);
     int getMapIndex(const int x, const int y);
-    std::vector<double> getRandomAngleConfig(const double goal_bias_probability,const std::vector<double> arm_goal);
+    std::vector<double> getRandomAngleConfig(const double goal_bias_probability, const std::vector<double> arm_goal);
     double euclideanDistance(const std::vector<double> &q_1,const std::vector<double> &q_2);
     double getNorm(const std::vector<double>& vec);
     void wrapAngles(std::vector<double> &angles);

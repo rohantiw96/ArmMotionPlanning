@@ -118,7 +118,7 @@ int SamplingPlanners::get_next_point(bresenham_param_t *params)
   return 1;
 }
 
-int SamplingPlanners::IsValidLineSegment(const double x0, const double y0, const double x1, const double y1)
+int SamplingPlanners::IsValidLineSegment(const double x0, const double y0, const double x1, const double y1, bool checkCollision)
 
 {
   bresenham_param_t params;
@@ -133,6 +133,9 @@ int SamplingPlanners::IsValidLineSegment(const double x0, const double y0, const
       y0 < 0 || y0 >= y_size_ ||
       y1 < 0 || y1 >= y_size_)
     return 0;
+  
+  if (!checkCollision) //dont check for obstacle collision
+    return 1;
 
   ContXY2Cell(x0, y0, &nX0, &nY0);
   ContXY2Cell(x1, y1, &nX1, &nY1);
@@ -151,7 +154,7 @@ int SamplingPlanners::IsValidLineSegment(const double x0, const double y0, const
   return 1;
 }
 
-int SamplingPlanners::IsValidArmConfiguration(std::vector<double> angles)
+int SamplingPlanners::IsValidArmConfiguration(std::vector<double> angles,bool checkCollision)
 {
   double x0, y0, x1, y1;
   int i;
@@ -168,7 +171,7 @@ int SamplingPlanners::IsValidArmConfiguration(std::vector<double> angles)
     y1 = y0 - LINKLENGTH_CELLS * sin(2 * PI - angles[i]);
 
     //check the validity of the corresponding line segment
-    if (!IsValidLineSegment(x0, y0, x1, y1))
+    if (!IsValidLineSegment(x0, y0, x1, y1,checkCollision))
       return 0;
   }
   return 1;
@@ -196,7 +199,7 @@ void SamplingPlanners::wrapAngles(std::vector<double> &angles){
     }
 }
 
-std::vector<double> SamplingPlanners::getRandomAngleConfig(){
+std::vector<double> SamplingPlanners::getRandomAngleConfig(const double goal_bias_probability, const std::vector<double> arm_goal){
   std::vector<double> angles;
   for(int i=0;i<numofDOFs_;i++){
       angles.push_back(angle_distribution_(generator_));
@@ -226,12 +229,12 @@ double SamplingPlanners::getPathCost(const std::vector<std::vector<double>>& pat
 }
 
 bool SamplingPlanners::checkGoalAndStartForCollision(){
-    if (!IsValidArmConfiguration(arm_goal_))
+    if (!IsValidArmConfiguration(arm_goal_,false))
     {
       printf("goal point is in collision\n");
       return true;
     }
-  if (!IsValidArmConfiguration(arm_start_))
+  if (!IsValidArmConfiguration(arm_start_,true))
     {
       printf("starting point is in collision\n");
       return true;
