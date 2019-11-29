@@ -12,7 +12,7 @@ class LAZYPRM: public SamplingPlanners{
         double returnPathCost();
         int returnNumberOfVertices();
     private:
-        std::list<std::unordered_map<std::vector<double>,std::vector<std::vector<double>>,container_hash<std::vector<double>>>> comopnents_;
+        component_map map;
         double epsilon_;
         int num_iteration_;
         int num_samples_;
@@ -21,13 +21,9 @@ class LAZYPRM: public SamplingPlanners{
         std::vector<std::vector<double>> findKNearestNeighbor(const std::vector<double> &q_new);
         bool interpolate(const std::vector<double> &start,const std::vector<double> &end);
         void addSample(std::vector<double> &q_new,std::vector<double> &q_neighbor);
-        int findComponent(std::vector<double> &q_neighbor);
-        void mergeComponents(component_map &m1,component_map &m2);
-        std::vector<std::vector<double>> getStartAndGoalNode();
         std::vector<double> findNearestNeighbor(const std::vector<double> &q_new);
-        std::vector<double> findNearestNeighborComponenent(const std::vector<double> &q_new, component_map &comp);
         std::vector<std::vector<double>> getShortestPath();
-        std::vector<std::vector<double>> backTrack(std::vector<double> node, std::vector<double> start_neighbor,bool &found_collision_free_path,component_map &m);
-        void removeNode(const std::vector<double> &current_angle, component_map &m);
-        void removeEdge(const std::vector<double> &current_angle,const std::vector<double> &next_angle, component_map &m);
+        std::vector<std::vector<double>> backTrack(std::vector<double> node, std::vector<double> start_neighbor,bool &found_collision_free_path);
+        void removeNode(const std::vector<double> &current_angle);
+        void removeEdge(const std::vector<double> &current_angle,const std::vector<double> &next_angle);
 };
