@@ -23,11 +23,11 @@ class LAZYPRM: public SamplingPlanners{
         void addSample(std::vector<double> &q_new,std::vector<double> &q_neighbor);
         int findComponent(std::vector<double> &q_neighbor);
         void mergeComponents(component_map &m1,component_map &m2);
-        void addStartAndGoalNode();
+        std::vector<std::vector<double>> getStartAndGoalNode();
         std::vector<double> findNearestNeighbor(const std::vector<double> &q_new);
+        std::vector<double> findNearestNeighborComponenent(const std::vector<double> &q_new, component_map &comp);
         std::vector<std::vector<double>> getShortestPath();
-        std::vector<std::vector<double>> backTrack(std::vector<double> node);
-
-
-
+        std::vector<std::vector<double>> backTrack(std::vector<double> node, std::vector<double> start_neighbor,bool &found_collision_free_path,component_map &m);
+        void removeNode(const std::vector<double> &current_angle, component_map &m);
+        void removeEdge(const std::vector<double> &current_angle,const std::vector<double> &next_angle, component_map &m);
 };

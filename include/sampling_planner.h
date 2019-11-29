@@ -69,5 +69,7 @@ protected:
     void returnPathToMex(const std::vector<std::vector<double>>& path,double ***plan,int *planlength);
     double getPathCost(const std::vector<std::vector<double>>& path);
     bool checkGoalAndStartForCollision();
+    void printAngles(std::vector<double> angles);
+
 
 };

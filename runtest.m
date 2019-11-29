@@ -3,7 +3,6 @@ function[armplanlength,time,cost,vertices] = runtest(mapfile, armstart, armgoal,
 LINKLENGTH_CELLS=10;
 envmap = load(mapfile);
 
-
 close all;
 
 %draw the environment
