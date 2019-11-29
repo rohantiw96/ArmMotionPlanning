@@ -25,6 +25,10 @@ bool LAZYPRM::interpolate(const std::vector<double> &start,const std::vector<dou
 
     return true;
 }
+int LAZYPRM::returnNumberOfVertices()
+{
+    return map.size();
+}
 
 std::vector<std::vector<double>> LAZYPRM::findKNearestNeighbor(const std::vector<double> &q_new){
     std::vector<std::vector<double>> k_nearest_neighbor;
@@ -59,22 +63,17 @@ void LAZYPRM::addSample(std::vector<double> &q_new,std::vector<double> &q_neighb
 
 void LAZYPRM::removeNode(const std::vector<double> &current_angle)
 {
-    printf("removing Node\n");
     auto current_node = map.find(current_angle);
     int counter=0;
     for (auto &neighbor_nodes : current_node->second)
     {
-        printf("looping through neighbors\n");
         counter = 0;
         auto neighbor_nodes_neighbors =  &map.find(neighbor_nodes)->second;
         for (auto &neighbors_neighbor : *neighbor_nodes_neighbors)
         {
-            printf("looping through neighbors neighbors\n");
             if (neighbors_neighbor == current_angle)
             {
-                printf("deleting neighbors\n");
                 neighbor_nodes_neighbors->erase(neighbor_nodes_neighbors->begin()+counter);
-                printf("done deleting\n");
                 break;
             }
             counter++;
@@ -85,7 +84,6 @@ void LAZYPRM::removeNode(const std::vector<double> &current_angle)
 
 void LAZYPRM::removeEdge(const std::vector<double> &current_angle,const std::vector<double> &next_angle)
 {
-    printf("removing Edge\n");
     auto neighbor_nodes_neighbors = map.find(current_angle)->second;
     int counter = 0;
     for (auto &neighbors_neighbor : neighbor_nodes_neighbors)
@@ -174,26 +172,15 @@ std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node, st
     return path;
 }
 
-int LAZYPRM::returnNumberOfVertices(){
-    return map.size();
-}
-
 std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     std::vector<std::vector<double>> final_path;
-    std::vector<double> start_neighbor = findNearestNeighbor(arm_start_);
-    std::vector<double> goal_neighbor = findNearestNeighbor(arm_goal_);
-
-    printf("starting to check for collisions\n");
+    std::vector<double> start_neighbor;
+    std::vector<double> goal_neighbor;
     bool found_collision_free_path = false;
     while (!found_collision_free_path)
     {
         start_neighbor = findNearestNeighbor(arm_start_);
         goal_neighbor = findNearestNeighbor(arm_goal_);
-        std::cout<<"start angle\n";
-        printAngles(start_neighbor);
-        std::cout<<"goal angle\n";
-        printAngles(goal_neighbor);
-        printf("componenent size %ld ",map.size());
         came_from_.clear();
         final_path.clear();
         if (map.find(goal_neighbor)==map.end() || map.find(start_neighbor)==map.end())
@@ -230,9 +217,7 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
                 }
             }
         }
-        printf("here 9\n");
         final_path = backTrack(goal_neighbor,start_neighbor,found_collision_free_path);
-        printf("componenent size  after backtracking %ld ",map.size());
     }
     return final_path;
 }
