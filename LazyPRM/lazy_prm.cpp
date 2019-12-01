@@ -5,6 +5,8 @@ LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &ar
         epsilon_ = 1;
         num_iteration_ = 150000;
         num_samples_ = 200;
+        found_initial_path_ = false;
+
 }
 bool LAZYPRM::interpolate(const std::vector<double> &start,const std::vector<double> &end){
     std::vector<double> delta;
@@ -156,7 +158,10 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     while (!found_collision_free_path)
     {
         path_found = false;
-        start_neighbor = findNearestNeighbor(arm_start_);
+        if (!found_initial_path_)
+            start_neighbor = findNearestNeighbor(arm_start_);
+        else
+            start_neighbor = arm_start_;
         goal_neighbor = findNearestNeighbor(arm_goal_);
         came_from_.clear();
         final_path.clear();
@@ -239,7 +244,7 @@ void LAZYPRM::buildRoadMap(){
 double LAZYPRM::returnPathCost(){
     return total_cost_;
 }
-void LAZYPRM::plan(double ***plan,int *planlength){
+void LAZYPRM::getFirstPlan(double ***plan,int *planlength){
     total_cost_= 0;
     std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
     if (!checkGoalAndStartForCollision()){
@@ -247,5 +252,20 @@ void LAZYPRM::plan(double ***plan,int *planlength){
         path =  getShortestPath();
         if (path.size() > 0) total_cost_ = getPathCost(path);
     }
+    found_initial_path_ = true;
+    printf("found initial path\n");
+    returnPathToMex(path,plan,planlength);
+}
+
+void LAZYPRM::replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle){
+    map_ = map;
+    arm_start_ = current_angle;
+    total_cost_= 0;
+    std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
+    if (!checkGoalAndStartForCollision()){
+        path =  getShortestPath();
+        if (path.size() > 0) total_cost_ = getPathCost(path);
+    }
+    printf("found replaned path\n");
     returnPathToMex(path,plan,planlength);
 }

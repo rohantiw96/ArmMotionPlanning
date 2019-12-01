@@ -7,7 +7,8 @@ typedef std::unordered_map<std::vector<double>,std::vector<std::vector<double>>,
 class LAZYPRM: public SamplingPlanners{
     public:
         LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs);
-        void plan(double ***plan,int *planlength);
+        void getFirstPlan(double ***plan,int *planlength);
+        void replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle);
         void buildRoadMap();
         double returnPathCost();
         int returnNumberOfVertices();
@@ -17,6 +18,7 @@ class LAZYPRM: public SamplingPlanners{
         int num_iteration_;
         int num_samples_;
         double total_cost_;
+        bool found_initial_path_;
         std::unordered_map<std::vector<double>,std::vector<double>,container_hash<std::vector<double>>> came_from_;
         std::vector<std::vector<double>> findKNearestNeighbor(const std::vector<double> &q_new);
         bool interpolate(const std::vector<double> &start,const std::vector<double> &end);

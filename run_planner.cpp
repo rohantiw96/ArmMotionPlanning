@@ -90,8 +90,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // SamplingPlanner planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,samples,num_iterations);
     // planner.plan(&plan, &planlength);
     
+
+    //LAZY PRM
     LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-    planner.plan(&plan, &planlength);
+    planner.getFirstPlan(&plan, &planlength);
+    // planner.replan(&plan, &planlength,map,arm_start);
     cost = planner.returnPathCost();
     num_vertices = planner.returnNumberOfVertices();
 
