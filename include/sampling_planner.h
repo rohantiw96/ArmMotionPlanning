@@ -42,12 +42,9 @@ public:
                      const std::vector<double> &arm_goal,
                      int numofDOFs);
 
-<<<<<<< HEAD
     bool interpolate(double *map,const std::vector<double> &start,const std::vector<double> &end);
-=======
     virtual void getFirstPlan(double ***plan,int *planlength);
     virtual void replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle);
->>>>>>> 9d9c5a69eb05dae2c58fca45e752c457e1769356
 
 protected:
     double *map_;

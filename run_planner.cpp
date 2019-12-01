@@ -210,7 +210,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         //Increment if no collision
         if(collision){
             std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-            planner->replan(&plan, &planlength, arm_current, maplayer, arm_current);
+            planner->replan(&plan, &planlength, maplayer, arm_current);
             std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
