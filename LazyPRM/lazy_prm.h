@@ -28,6 +28,4 @@ class LAZYPRM: public SamplingPlanners{
         void removeNode(const std::vector<double> &current_angle);
         void removeEdge(const std::vector<double> &current_angle,const std::vector<double> &next_angle);
         double getHeuristic(std::vector<double> current_node,std::vector<double> goal);
-
-
 };
