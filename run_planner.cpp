@@ -1,8 +1,8 @@
 #include <math.h>
 #include "mex.h"
 #include <time.h>
-// #include "include/sampling_planner.h"
-// #include "LazyPRM/lazy_prm.h"
+#include "include/sampling_planner.h"
+#include "LazyPRM/lazy_prm.h"
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -38,6 +38,48 @@
 
 //the length of each link in the arm (should be the same as the one used in runtest.m)
 #define LINKLENGTH_CELLS 10
+
+
+bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm_current, double maxjntspeed, const double* next_plan, int numofDOFs)
+{
+    double scale_factor = 1;
+    for(int idx=0; idx < numofDOFs; idx++){
+        arm_next[idx] = next_plan[idx] - arm_current[idx];
+        if(abs(arm_next[idx]) > maxjntspeed){
+            double new_factor = maxjntspeed / arm_next[idx];
+            if(new_factor < scale_factor){
+                scale_factor = new_factor;
+            }
+        }
+    }
+    for(int idx=0; idx < numofDOFs; idx++){
+        arm_next[idx] = arm_current[idx] + arm_next[idx]*scale_factor;
+    }
+
+    if(scale_factor == 1){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+
+static void planner(
+        int planner_id,
+        double*	map,
+        int x_size,
+        int y_size,
+        int t_size,
+        double* armstart_anglesV_rad,
+        double* armgoal_anglesV_rad,
+        int numofDOFs,
+        double*** plan,
+        int* planlength)
+{
+
+    return;
+}
 
 void mexFunction( int nlhs, mxArray *plhs[], 
 		  int nrhs, const mxArray*prhs[])
@@ -84,6 +126,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double** plan = NULL;
     int planlength = 0;
 
+    //keep track of arm trajectory
+    double** arm_traj = NULL;
+    int arm_traj_length = 0;
+
     //Tunable parameters
     int lookahead = 3;
     double maxjntspeed = 0.5;
@@ -113,8 +159,18 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // cost = planner.returnPathCost();
     // num_vertices = planner.returnNumberOfVertices();
 
+    SamplingPlanners *planner;
+    switch(planner_id) {
+        case 0:
+            LAZYPRM *temp = new LAZYPRM(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
+            planner = temp;
+            break;
+    }
+
     int layersize = x_size * y_size;
     std::vector<double> arm_current = arm_start;
+    std::vector<double> arm_next = arm_current;
+    std::vector<double> arm_future = arm_next;
     int next_plan_step = 1;
     for(int t=0; t < t_size; t++){
         int layer_index = layersize * t;
@@ -122,16 +178,57 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
         if(t==0){
             std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-            planner.generate(maplayer, x_size, y_size, arm_start, arm_goal, numofDOFs);
+            planner->getFirstPlan(&plan, &planlength);
             std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
 
             //Increment t by t_plan:
             t += floor(t_plan);
+            layer_index = layersize * t;
+            maplayer = &map[layer_index];
         }
 
+        // Check for collisions in the future of trajectory
+        // Interpolate:
+        bool collision = false;
+        int future_plan_step = next_plan_step;
+        for(int t_future = 0; t_future < lookahead; t_future++){
+            bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
+            collision = planner->interpolate(maplayer, arm_future, arm_next); 
 
+            if(collision){
+                break;
+            }
+            if(plan_step_reached){
+                future_plan_step++;
+            }
+
+            arm_next = arm_future;
+        }
+
+        //Increment if no collision
+        if(collision){
+            std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
+            planner->replan(&plan, &planlength, arm_current, maplayer, arm_current);
+            std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
+            double t_plan = t_plandiff.count()/1000.0;
+
+            //Increment t by t_plan:
+            t += floor(t_plan);
+
+            //reset arm_next:
+            arm_next = arm_current;
+        }
+        else{
+            bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
+            // HOW TO SAVE AND RETURN TO MATLAB
+            arm_current = arm_next;
+            if(next_plan_reached){
+                next_plan_step++;
+            }
+        }
     }
 
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();

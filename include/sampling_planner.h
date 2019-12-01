@@ -42,6 +42,9 @@ public:
                      const std::vector<double> &arm_goal,
                      int numofDOFs);
 
+    virtual void getFirstPlan(double ***plan,int *planlength);
+    virtual void replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle);
+
 protected:
     double *map_;
     int x_size_;
@@ -49,6 +52,7 @@ protected:
     std::vector<double> arm_start_;
     std::vector<double> arm_goal_;
     int numofDOFs_;
+    int num_samples_;
     double ***plan_;
     int *planlength_;
     std::random_device rand_device_;
