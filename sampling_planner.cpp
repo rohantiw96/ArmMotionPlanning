@@ -2,7 +2,6 @@
 
 #define LINKLENGTH_CELLS 10
 #define PI 3.141592654
-
 SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs){
   map_ = map;
   x_size_ = x_size;
@@ -13,6 +12,15 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
   generator_ = std::mt19937(std::random_device()());
   angle_distribution_ = std::uniform_real_distribution<double>(0, 2*PI);
 };
+
+void SamplingPlanners::printAngles(std::vector<double> angles)
+{
+  for (auto angle : angles)
+  {
+    printf("%f ",angle);
+  }
+  printf("\n");
+}
 
 void SamplingPlanners::ContXY2Cell(const double x, const double y, short unsigned int *pX, short unsigned int *pY)
 {
@@ -231,7 +239,7 @@ double SamplingPlanners::getPathCost(const std::vector<std::vector<double>>& pat
 bool SamplingPlanners::checkGoalAndStartForCollision(){
     if (!IsValidArmConfiguration(arm_goal_,false))
     {
-      printf("goal point is in collision\n");
+      printf("goal point is in not in the within map boaundaries\n");
       return true;
     }
   if (!IsValidArmConfiguration(arm_start_,true))

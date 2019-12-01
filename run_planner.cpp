@@ -107,6 +107,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // planner.plan(&plan, &planlength);
     
     // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    // planner.getFirstPlan(&plan, &planlength);
+    // planner.replan(&plan, &planlength,map,arm_start);
     // planner.plan(&plan, &planlength);
     // cost = planner.returnPathCost();
     // num_vertices = planner.returnNumberOfVertices();

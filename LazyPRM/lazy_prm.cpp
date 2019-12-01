@@ -1,10 +1,29 @@
 #include "lazy_prm.h"
+struct Node
+{
+    std::vector<double> angles_;
+    double f_value_;
+    Node()
+    {
+        f_value_ = 0;
+    }
+    Node(std::vector<double> angles, double f_value) : f_value_(f_value),angles_(angles) {}
+};
+struct CompareNode
+{
+    bool operator()(Node const &n1, Node const &n2)
+    {
+        return n1.f_value_ > n2.f_value_;
+    }
+};
 
 LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs)
     :SamplingPlanners(map,x_size,y_size,arm_start,arm_goal,numofDOFs){
         epsilon_ = 1;
-        num_iteration_ = 100000;
-        num_samples_ = 50;
+        num_iteration_ = 150000;
+        num_samples_ = 200;
+        found_initial_path_ = false;
+
 }
 bool LAZYPRM::interpolate(const std::vector<double> &start,const std::vector<double> &end){
     std::vector<double> delta;
@@ -20,20 +39,28 @@ bool LAZYPRM::interpolate(const std::vector<double> &start,const std::vector<dou
             return false;
         }
     }
+    if (!IsValidArmConfiguration(end,true))
+        return false;
+
     return true;
 }
-
+int LAZYPRM::returnNumberOfVertices()
+{
+    return map.size();
+}
+double LAZYPRM::getHeuristic(std::vector<double> current_node,std::vector<double> goal)
+{
+    return euclideanDistance(current_node,goal);
+}
 std::vector<std::vector<double>> LAZYPRM::findKNearestNeighbor(const std::vector<double> &q_new){
     std::vector<std::vector<double>> k_nearest_neighbor;
     double euclidean_distance = 0;
-    for(const auto& c:comopnents_){
-        for(const auto& m:c){
-            euclidean_distance = euclideanDistance(m.first,q_new);
-            if(euclidean_distance < epsilon_ && interpolate(q_new,m.first)){
-                k_nearest_neighbor.push_back(m.first);
+        for(const auto& node:map){
+            euclidean_distance = euclideanDistance(node.first,q_new);
+            if(euclidean_distance < epsilon_){ //dont check for collisions
+                k_nearest_neighbor.push_back(node.first);
             }
         }
-    }
     return k_nearest_neighbor;
 }
 
@@ -41,148 +68,228 @@ std::vector<double> LAZYPRM::findNearestNeighbor(const std::vector<double> &q_ne
     std::vector<double> nearest_neighbor;
     double euclidean_distance = 0;
     double min_distance = std::numeric_limits<double>::max();
-    for(const auto& c:comopnents_){
-        for(const auto& m:c){
-            euclidean_distance = euclideanDistance(m.first,q_new);
-            if(euclidean_distance < min_distance && interpolate(q_new,m.first)){
-                min_distance = euclidean_distance;
-                nearest_neighbor = m.first;
-            }
+    for(const auto& node:map){
+        euclidean_distance = euclideanDistance(node.first,q_new);
+        if(euclidean_distance < min_distance && interpolate(q_new,node.first)){
+            min_distance = euclidean_distance;
+            nearest_neighbor = node.first;
         }
     }
     return nearest_neighbor;
 }
 
 void LAZYPRM::addSample(std::vector<double> &q_new,std::vector<double> &q_neighbor){
-    for(auto& c:comopnents_){
-        if(c.find(q_neighbor) != c.end()){
-            c[q_neighbor].push_back(q_new);
-            c[q_new].push_back(q_neighbor);
-            break;
-        }
-    }
-}
-int LAZYPRM::findComponent(std::vector<double> &q_neighbor){
-    int num_component = 0;
-    for(auto& c:comopnents_){
-        if(c.find(q_neighbor) != c.end()){
-            break;
-        }
-        num_component++;
-    }
-    return num_component;
-}
-void LAZYPRM::mergeComponents(component_map &m1,component_map &m2){
-    if(m1.size() > m2.size()) {
-        m1.insert(m2.begin(),m2.end());
-        comopnents_.remove(m2);
-    }
-    else {
-        m2.insert(m1.begin(),m1.end());
-        comopnents_.remove(m1);
-    }
-}
-void LAZYPRM::addStartAndGoalNode(){
-    std::vector<double> start_neighbor = findNearestNeighbor(arm_start_);
-    std::vector<double> goal_neighbor = findNearestNeighbor(arm_goal_);
-    addSample(arm_start_,start_neighbor);
-    addSample(arm_goal_,goal_neighbor);
+    map[q_neighbor].push_back(q_new);
+    map[q_new].push_back(q_neighbor);
 }
 
-std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node){
+void LAZYPRM::removeNode(const std::vector<double> &current_angle)
+{
+    auto current_node = map.find(current_angle);
+    int counter;
+    for (auto &neighbor_nodes : current_node->second)
+    {
+        counter = 0;
+        auto neighbor_nodes_neighbors =  &map.find(neighbor_nodes)->second;
+        for (auto &neighbors_neighbor : *neighbor_nodes_neighbors)
+        {
+            if (neighbors_neighbor == current_angle)
+            {
+                neighbor_nodes_neighbors->erase(neighbor_nodes_neighbors->begin()+counter);
+                break;
+            }
+            counter++;
+        }
+    }
+    map.erase(current_node);
+}
+
+void LAZYPRM::removeEdge(const std::vector<double> &current_angle,const std::vector<double> &next_angle)
+{
+    auto neighbor_nodes_neighbors = &map.find(current_angle)->second;
+    int counter = 0;
+    for (auto &neighbors_neighbor : *neighbor_nodes_neighbors)
+    {
+        if (neighbors_neighbor == next_angle)
+        {
+            neighbor_nodes_neighbors->erase(neighbor_nodes_neighbors->begin()+counter);
+            break;
+        }
+        counter++;
+    }
+
+    neighbor_nodes_neighbors = &map.find(next_angle)->second;
+    counter = 0;
+    for (auto &neighbors_neighbor : *neighbor_nodes_neighbors)
+    {
+        if (neighbors_neighbor == current_angle)
+        {
+            neighbor_nodes_neighbors->erase(neighbor_nodes_neighbors->begin()+counter);
+            break;
+        }
+        counter++;
+    }
+}
+
+std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node, std::vector<double> start_neighbor,bool &found_collision_free_path){
+    printf("backtracking\n");
     std::vector<double> current_angle = node;
     std::vector<std::vector<double>> path;
-    while (current_angle != arm_start_) // Backtracking to get the shortest path
+    bool success = true;
+    //checking if all nodes are not in collision
+    while (current_angle != start_neighbor) // Backtracking to get the shortest path
     {
         current_angle = came_from_[current_angle];
+        if (!IsValidArmConfiguration(current_angle,true))
+        {   
+            removeNode(current_angle);
+            success = false;
+        }
         path.emplace_back(current_angle);
     }
-    path.push_back(arm_start_);
+    if (!success)
+        return std::vector<std::vector<double>>{};
+
     std::reverse(path.begin(),path.end());
+
+    // checking if interpolation between nodes are collision free
+    for (int i = 0;i<path.size()-1;i++)
+    {
+        if (!interpolate(path[i],path[i+1]))
+            {
+                removeEdge(path[i],path[i+1]);
+                return std::vector<std::vector<double>>{};
+            }
+    }
+    found_collision_free_path = true;
+    path.push_back(arm_goal_);
+    path.insert(path.begin(),arm_start_);
     return path;
 }
 
-int LAZYPRM::returnNumberOfVertices(){
-    return (*std::next(comopnents_.begin(), findComponent(arm_goal_))).size();
-}
-
 std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
-    int goal_component = findComponent(arm_goal_);
-    if (goal_component != findComponent(arm_start_)){
-        printf("Start and Goal don't belong to the same components\n");
-        return std::vector<std::vector<double>>{};
-    }
-    else{
-        std::unordered_map<std::vector<double>,double,container_hash<std::vector<double>>> dijkstra_cost_;
-        component_map m = *std::next(comopnents_.begin(), goal_component);
-        for(const auto& nodes:m){
-            dijkstra_cost_[nodes.first] = std::numeric_limits<double>::max();
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    double weight = 3;
+    std::vector<std::vector<double>> final_path;
+    std::vector<double> start_neighbor;
+    std::vector<double> goal_neighbor;
+    bool found_collision_free_path = false;
+    bool path_found;
+    while (!found_collision_free_path)
+    {
+        path_found = false;
+        if (!found_initial_path_)
+            start_neighbor = findNearestNeighbor(arm_start_);
+        else
+            start_neighbor = arm_start_;
+        goal_neighbor = findNearestNeighbor(arm_goal_);
+        came_from_.clear();
+        final_path.clear();
+        if (map.find(goal_neighbor)==map.end() || map.find(start_neighbor)==map.end())
+        {
+            printf("start or goal node are disconnected\n");
+            found_collision_free_path == true;
+            break;
         }
-        std::priority_queue<std::vector<double>> list;
-        dijkstra_cost_[arm_start_] = 0.0; // Cost of tbe initial node 0
-        list.push(arm_start_);
-        double cost = 0;
+        std::unordered_map<std::vector<double>,double,container_hash<std::vector<double>>> g_values;
+        for(const auto& nodes:map){
+            g_values[nodes.first] = std::numeric_limits<double>::max();
+        }
+        // std::priority_queue<std::vector<double>> list;
+        std::priority_queue<Node, std::vector<Node>, CompareNode> list;
+
+        g_values[start_neighbor] = 0.0; // Cost of tbe initial node 0
+        list.push(Node(start_neighbor, weight* getHeuristic(start_neighbor,goal_neighbor)));
+        double g_val = 0;
         std::vector<std::vector<double>> neighbors;
+        Node current_node;
         std::vector<double> current;
-        while(!list.empty()){
-            current = list.top();
+        while(!path_found && !list.empty()){
+            current_node = list.top();
+            current = current_node.angles_;
             list.pop();
-            neighbors = m.find(current)->second;
+            if (current == goal_neighbor)
+            {
+                path_found = true;
+            }
+            neighbors = map.find(current)->second;
             for(const auto& n:neighbors){
-                cost = euclideanDistance(current,n) + dijkstra_cost_[current];
-                if (cost < dijkstra_cost_[n]){
-                    dijkstra_cost_[n] = cost;
-                    list.push(n);
+                g_val = euclideanDistance(current,n) + g_values[current];
+                if (g_val < g_values[n]){
+                    g_values[n] = g_val;
+                    list.push(Node(n,g_val + weight*getHeuristic(n,goal_neighbor)));
                     came_from_[n] = current;
                 }
             }
         }
+        if(path_found)
+            final_path = backTrack(goal_neighbor,start_neighbor,found_collision_free_path);
+        else 
+        {
+            printf("dijkstra did not reach goal\n");
+            return std::vector<std::vector<double>>{};
+        }
     }
-    return backTrack(arm_goal_);
+    std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> time_span = t2 - t1;
+    double time = time_span.count()/1000.0;
+    printf("finding shortest path took %f seconds\n",time);
+
+    return final_path;
 }
 
 void LAZYPRM::buildRoadMap(){
     int iter = 0;
     std::vector<double> q_rand;
     std::vector<std::vector<double>> k_nearest_neighbors;
-    int own_component = -1;
-    int neighbor_component = -1;
+    int initialized = false;
     while(iter < num_iteration_){
         q_rand = getRandomAngleConfig(0,std::vector<double>{});
         if (IsValidArmConfiguration(q_rand,false)){
             k_nearest_neighbors = findKNearestNeighbor(q_rand);
             if(k_nearest_neighbors.size()>0){
-                addSample(q_rand,*k_nearest_neighbors.begin()); // Add the sample to the componenent of the first neighbor
-                own_component = findComponent(q_rand);
-                for (auto neighbors = std::next(k_nearest_neighbors.begin()); neighbors != k_nearest_neighbors.end(); ++neighbors){
-	                neighbor_component = findComponent(*neighbors);
-                    if(own_component!=neighbor_component){
-                        mergeComponents(*std::next(comopnents_.begin(), own_component),*std::next(comopnents_.begin(), neighbor_component));
+                addSample(q_rand,*k_nearest_neighbors.begin());
+                for(auto neighbors = std::next(k_nearest_neighbors.begin()); neighbors != k_nearest_neighbors.end(); ++neighbors){
                         addSample(q_rand,*neighbors);
-                        own_component = findComponent(q_rand);
-                    }
-                }   
+                }
             }
-            else{
-                std::unordered_map<std::vector<double>, std::vector<std::vector<double>>, container_hash<std::vector<double>>> new_component;
-                new_component[q_rand] = std::vector<std::vector<double>>{};
-                comopnents_.emplace_back(new_component);
+            else if (!initialized && k_nearest_neighbors.size()==0)
+            {
+                std::vector<std::vector<double>> empty_neighbor{};
+                map[q_rand] = empty_neighbor;
+                initialized = true;
             }
+               
         }
         iter++;
     }
+    printf("built map\n");
 }
 double LAZYPRM::returnPathCost(){
     return total_cost_;
 }
-void LAZYPRM::plan(double ***plan,int *planlength){
+void LAZYPRM::getFirstPlan(double ***plan,int *planlength){
     total_cost_= 0;
     std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
     if (!checkGoalAndStartForCollision()){
         buildRoadMap();
-        addStartAndGoalNode();
         path =  getShortestPath();
         if (path.size() > 0) total_cost_ = getPathCost(path);
     }
+    found_initial_path_ = true;
+    printf("found initial path\n");
+    returnPathToMex(path,plan,planlength);
+}
+
+void LAZYPRM::replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle){
+    map_ = map;
+    arm_start_ = current_angle;
+    total_cost_= 0;
+    std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
+    if (!checkGoalAndStartForCollision()){
+        path =  getShortestPath();
+        if (path.size() > 0) total_cost_ = getPathCost(path);
+    }
+    printf("found replaned path\n");
     returnPathToMex(path,plan,planlength);
 }
