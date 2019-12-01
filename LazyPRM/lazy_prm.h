@@ -21,7 +21,6 @@ class LAZYPRM: public SamplingPlanners{
         bool found_initial_path_;
         std::unordered_map<std::vector<double>,std::vector<double>,container_hash<std::vector<double>>> came_from_;
         std::vector<std::vector<double>> findKNearestNeighbor(const std::vector<double> &q_new);
-        bool interpolate(double *map,const std::vector<double> &start,const std::vector<double> &end);
         void addSample(std::vector<double> &q_new,std::vector<double> &q_neighbor);
         std::vector<double> findNearestNeighbor(const std::vector<double> &q_new);
         std::vector<std::vector<double>> getShortestPath();

@@ -25,25 +25,7 @@ LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &ar
         found_initial_path_ = false;
 
 }
-bool LAZYPRM::interpolate(const std::vector<double> &start,const std::vector<double> &end){
-    std::vector<double> delta;
-    for(int i=0;i<numofDOFs_;i++){
-        delta.push_back((end[i] - start[i])/ (num_samples_ - 1));
-    }
-    for(int i=0; i < num_samples_- 1; i++){
-        std::vector<double> angles;
-        for(int j=0;j<numofDOFs_;j++){
-            angles.push_back(start[j]+ delta[j] * i);
-        }
-        if (!IsValidArmConfiguration(angles,true)){
-            return false;
-        }
-    }
-    if (!IsValidArmConfiguration(end,true))
-        return false;
 
-    return true;
-}
 int LAZYPRM::returnNumberOfVertices()
 {
     return map.size();
