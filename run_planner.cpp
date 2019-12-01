@@ -1,8 +1,11 @@
 #include <math.h>
 #include "mex.h"
 #include <time.h>
-#include "sampling_planner.h"
-#include "lazy_prm.h"
+// #include "include/sampling_planner.h"
+// #include "LazyPRM/lazy_prm.h"
+#include <iostream>
+#include <vector>
+#include <chrono>
 
 
 /* Input Arguments */
@@ -52,6 +55,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     /* get the dimensions of the map and the map matrix itself*/     
     int x_size = (int) mxGetM(MAP_IN);
     int y_size = (int) mxGetN(MAP_IN);
+    int t_size = y_size/x_size;
+    y_size = x_size;
     double* map = mxGetPr(MAP_IN);
     
     /* get the start and goal angles*/     
@@ -78,29 +83,61 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //call the planner
     double** plan = NULL;
     int planlength = 0;
+
+    //Tunable parameters
+    int lookahead = 3;
+    double maxjntspeed = 0.5;
     
     //you can may be call the corresponding planner function here
     double cost = 0;
     double num_vertices = 0;
     int num_iterations = 100000;  
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();  
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+    printf("0: %f, 2500: %f, 5000: %f\n", map[0], map[2500], map[5000]);
+    
+    double* maplayer = &map[2500];
+    printf("0: %f, 2500: %f, 5000: %f\n", maplayer[0], maplayer[2500], maplayer[5000]);
+
+    printf("map xdim: %d, ydim: %d, tdim: %d\n", x_size, y_size, t_size);
 
     // Call Planner Here Exmaple: 
 
     // SamplingPlanner planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,samples,num_iterations);
     // planner.plan(&plan, &planlength);
     
-    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-    planner.plan(&plan, &planlength);
-    cost = planner.returnPathCost();
-    num_vertices = planner.returnNumberOfVertices();
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    // planner.plan(&plan, &planlength);
+    // cost = planner.returnPathCost();
+    // num_vertices = planner.returnNumberOfVertices();
+
+    int layersize = x_size * y_size;
+    std::vector<double> arm_current = arm_start;
+    int next_plan_step = 1;
+    for(int t=0; t < t_size; t++){
+        int layer_index = layersize * t;
+        maplayer = &map[layer_index];
+
+        if(t==0){
+            std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
+            planner.generate(maplayer, x_size, y_size, arm_start, arm_goal, numofDOFs);
+            std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
+            double t_plan = t_plandiff.count()/1000.0;
+
+            //Increment t by t_plan:
+            t += floor(t_plan);
+        }
+
+
+    }
 
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> time_span = t2 - t1;
     double time = time_span.count()/1000.0;
 
     printf("Planner Took: %f seconds\n",time);
-    printf("Planner returned plan of length=%d\n", planlength); 
+    // printf("Planner returned plan of length=%d\n", planlength); 
     printf("Total Cost %f\n",cost);
     printf("Number of Vertices %f\n",num_vertices);
     /* Create return values */
