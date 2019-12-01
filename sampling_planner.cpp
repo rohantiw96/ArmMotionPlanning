@@ -11,6 +11,8 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
   numofDOFs_ = numofDOFs;
   generator_ = std::mt19937(std::random_device()());
   angle_distribution_ = std::uniform_real_distribution<double>(0, 2*PI);
+
+  num_samples_ = 200;
 };
 
 bool SamplingPlanners::interpolate(double*map,const std::vector<double> &start,const std::vector<double> &end){

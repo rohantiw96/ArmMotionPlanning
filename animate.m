@@ -19,8 +19,8 @@ a = plot(x, y, 'c-');
 
 for t = 1:speed:armplanlength
     for i = 1:size(armplan,2)
-        x(floor(t)+1) = x(floor(t)) + LINKLENGTH_CELLS*cos(armplan(floor(t),i));
-        y(floor(t)+1) = y(floor(t)) + LINKLENGTH_CELLS*sin(armplan(floor(t), i));
+        x(i+1) = x(i) + LINKLENGTH_CELLS*cos(armplan(floor(t),i));
+        y(i+1) = y(i) + LINKLENGTH_CELLS*sin(armplan(floor(t),i));
     end
     
     set(m, 'cdata', maps(:,:,floor(t)));
