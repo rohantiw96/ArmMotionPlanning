@@ -3,7 +3,7 @@
 LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs)
     :SamplingPlanners(map,x_size,y_size,arm_start,arm_goal,numofDOFs){
         epsilon_ = 1;
-        num_iteration_ = 100000;
+        num_iteration_ = 150000;
         num_samples_ = 200;
 }
 bool LAZYPRM::interpolate(const std::vector<double> &start,const std::vector<double> &end){
@@ -122,7 +122,6 @@ std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node, st
         {   
             removeNode(current_angle);
             success = false;
-            printf("removed Node\n");
         }
         path.emplace_back(current_angle);
     }
@@ -163,7 +162,7 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
         final_path.clear();
         if (map.find(goal_neighbor)==map.end() || map.find(start_neighbor)==map.end())
         {
-            printf("removed start or goal node connection\n");
+            printf("start or goal node are disconnected\n");
             found_collision_free_path == true;
             break;
         }
