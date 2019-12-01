@@ -1,4 +1,21 @@
 #include "lazy_prm.h"
+struct Node
+{
+    std::vector<double> angles_;
+    double f_value_;
+    Node()
+    {
+        f_value_ = 0;
+    }
+    Node(std::vector<double> angles, double f_value) : f_value_(f_value),angles_(angles) {}
+};
+struct CompareNode
+{
+    bool operator()(Node const &n1, Node const &n2)
+    {
+        return n1.f_value_ > n2.f_value_;
+    }
+};
 
 LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs)
     :SamplingPlanners(map,x_size,y_size,arm_start,arm_goal,numofDOFs){
@@ -31,7 +48,10 @@ int LAZYPRM::returnNumberOfVertices()
 {
     return map.size();
 }
-
+double LAZYPRM::getHeuristic(std::vector<double> current_node,std::vector<double> goal)
+{
+    return euclideanDistance(current_node,goal);
+}
 std::vector<std::vector<double>> LAZYPRM::findKNearestNeighbor(const std::vector<double> &q_new){
     std::vector<std::vector<double>> k_nearest_neighbor;
     double euclidean_distance = 0;
@@ -149,7 +169,7 @@ std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node, st
 
 std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-
+    double weight = 3;
     std::vector<std::vector<double>> final_path;
     std::vector<double> start_neighbor;
     std::vector<double> goal_neighbor;
@@ -171,18 +191,22 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
             found_collision_free_path == true;
             break;
         }
-        std::unordered_map<std::vector<double>,double,container_hash<std::vector<double>>> dijkstra_cost_;
+        std::unordered_map<std::vector<double>,double,container_hash<std::vector<double>>> g_values;
         for(const auto& nodes:map){
-            dijkstra_cost_[nodes.first] = std::numeric_limits<double>::max();
+            g_values[nodes.first] = std::numeric_limits<double>::max();
         }
-        std::priority_queue<std::vector<double>> list;
-        dijkstra_cost_[start_neighbor] = 0.0; // Cost of tbe initial node 0
-        list.push(start_neighbor);
-        double cost = 0;
+        // std::priority_queue<std::vector<double>> list;
+        std::priority_queue<Node, std::vector<Node>, CompareNode> list;
+
+        g_values[start_neighbor] = 0.0; // Cost of tbe initial node 0
+        list.push(Node(start_neighbor, weight* getHeuristic(start_neighbor,goal_neighbor)));
+        double g_val = 0;
         std::vector<std::vector<double>> neighbors;
+        Node current_node;
         std::vector<double> current;
         while(!path_found && !list.empty()){
-            current = list.top();
+            current_node = list.top();
+            current = current_node.angles_;
             list.pop();
             if (current == goal_neighbor)
             {
@@ -190,10 +214,10 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
             }
             neighbors = map.find(current)->second;
             for(const auto& n:neighbors){
-                cost = euclideanDistance(current,n) + dijkstra_cost_[current];
-                if (cost < dijkstra_cost_[n]){
-                    dijkstra_cost_[n] = cost;
-                    list.push(n);
+                g_val = euclideanDistance(current,n) + g_values[current];
+                if (g_val < g_values[n]){
+                    g_values[n] = g_val;
+                    list.push(Node(n,g_val + weight*getHeuristic(n,goal_neighbor)));
                     came_from_[n] = current;
                 }
             }

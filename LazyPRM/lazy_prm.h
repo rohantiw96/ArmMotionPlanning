@@ -28,5 +28,7 @@ class LAZYPRM: public SamplingPlanners{
         std::vector<std::vector<double>> backTrack(std::vector<double> node, std::vector<double> start_neighbor,bool &found_collision_free_path);
         void removeNode(const std::vector<double> &current_angle);
         void removeEdge(const std::vector<double> &current_angle,const std::vector<double> &next_angle);
+        double getHeuristic(std::vector<double> current_node,std::vector<double> goal);
+
 
 };
