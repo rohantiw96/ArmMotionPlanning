@@ -13,6 +13,26 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
   angle_distribution_ = std::uniform_real_distribution<double>(0, 2*PI);
 };
 
+bool SamplingPlanners::interpolate(double*map,const std::vector<double> &start,const std::vector<double> &end){
+    map_ = map;
+    std::vector<double> delta;
+    for(int i=0;i<numofDOFs_;i++){
+        delta.push_back((end[i] - start[i])/ (num_samples_ - 1));
+    }
+    for(int i=0; i < num_samples_- 1; i++){
+        std::vector<double> angles;
+        for(int j=0;j<numofDOFs_;j++){
+            angles.push_back(start[j]+ delta[j] * i);
+        }
+        if (!IsValidArmConfiguration(angles,true)){
+            return false;
+        }
+    }
+    if (!IsValidArmConfiguration(end,true))
+        return false;
+
+    return true;
+}
 void SamplingPlanners::printAngles(std::vector<double> angles)
 {
   for (auto angle : angles)
