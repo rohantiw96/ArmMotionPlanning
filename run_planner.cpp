@@ -3,6 +3,7 @@
 #include <time.h>
 #include "include/sampling_planner.h"
 #include "LazyPRM/lazy_prm.h"
+// #include "RRTConn/rrt_conn.h"
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -191,6 +192,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     std::vector<double> arm_next = arm_current;
     std::vector<double> arm_future = arm_next;
     int next_plan_step = 1;
+
     for(int t=0; t < t_size; t++){
         printf("timestep: %d\n", t);
         int layer_index = layersize * t;
@@ -202,7 +204,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
         }
 
         // Check for collisions in the future of trajectory
-        // Interpolate:
         bool collision = false;
         int future_plan_step = next_plan_step;
         for(int t_future = 0; t_future < lookahead; t_future++){
@@ -217,7 +218,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
             if(plan_step_reached){
                 future_plan_step++;
             }
-
             arm_next = arm_future;
         }
 
@@ -225,25 +225,36 @@ void mexFunction( int nlhs, mxArray *plhs[],
         if(collision){
             printf("REPLANNING\n");
             t_startplan = std::chrono::high_resolution_clock::now();
-            // planner->replan(&plan, &planlength, maplayer, arm_current);
-            planner.replan(&plan, &planlength, maplayer, arm_current);
+            planner.replan(&plan, &planlength, arm_current);
             t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
 
             printf("replanning took %f seconds\n", t_plan);
 
-            //Increment t by t_plan:
+            //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
+            for(int t_wait = t; t_wait < (t+=floor(t_plan)); t_wait++){
+                for(int j = 0; j < numofDOFs; j++){ 
+                    arm_traj[t_wait][j] = arm_current[j];
+                }
+            }
             t += floor(t_plan);
 
-            //reset arm_next:
+            //reset arm_next and next_plan_step:
             arm_next = arm_current;
+            next_plan_step = 1;
         }
         else{
             printf("MOVING ARM\n");
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
-            // HOW TO SAVE AND RETURN TO MATLAB
             arm_current = arm_next;
+
+            //insert into arm_traj
+            for(int j = 0; j < numofDOFs; j++){ 
+                arm_traj[t][j] = arm_current[j];
+            }
+
+            //increment plan step if reached
             if(next_plan_reached){
                 next_plan_step++;
             }
