@@ -43,8 +43,6 @@ public:
                      int numofDOFs);
 
     bool interpolate(double *map,const std::vector<double> &start,const std::vector<double> &end);
-    virtual void getFirstPlan(double ***plan,int *planlength);
-    virtual void replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle);
 
 protected:
     double *map_;
