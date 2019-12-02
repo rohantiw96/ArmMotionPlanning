@@ -3,7 +3,7 @@
 #include <time.h>
 #include "include/sampling_planner.h"
 #include "LazyPRM/lazy_prm.h"
-#include "RRTConn/rrt_conn.h"
+// #include "RRTConn/rrt_conn.h"
 #include <iostream>
 #include <vector>
 #include <chrono>
