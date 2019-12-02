@@ -128,8 +128,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     //keep track of arm trajectory
     //TODO: implement this and return to matlab instead of plan
-    double** arm_traj = NULL;
-    int arm_traj_length = 0;
+    double** arm_traj = (double**) malloc(t_size*sizeof(double*));
+
+    //populate arm_traj with arm_start
+    arm_traj[0] = (double*) malloc(numofDOFs*sizeof(double));
+    for(int j = 0; j < numofDOFs; j++){ 
+        arm_traj[0][j] = arm_start[j];
+    }
+    int arm_traj_length = 1;
 
     //Tunable parameters
     int lookahead = 3;
@@ -153,8 +159,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // SamplingPlanners planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     // planner.plan(&plan, &planlength);
     
-    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-    planner.getFirstPlan(&plan, &planlength);
     // planner.replan(&plan, &planlength,map,arm_start);
     // planner.plan(&plan, &planlength);
     // cost = planner.returnPathCost();
@@ -171,6 +175,17 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //         break;
     // }
 
+    //initialize planner & graph:
+    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
+    // planner->getFirstPlan(&plan, &planlength);
+    planner.getFirstPlan(&plan, &planlength);
+    std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
+    double t_plan = t_plandiff.count()/1000.0;
+
+    printf("first plan took %f seconds\n", t_plan);
+
     int layersize = x_size * y_size;
     std::vector<double> arm_current = arm_start;
     std::vector<double> arm_next = arm_current;
@@ -181,23 +196,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
         int layer_index = layersize * t;
         maplayer = &map[layer_index];
         planner.updateMap(maplayer);
-
-        if(t==0){
-            std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-            // planner->getFirstPlan(&plan, &planlength);
-            planner.getFirstPlan(&plan, &planlength);
-            std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
-            double t_plan = t_plandiff.count()/1000.0;
-
-            printf("first plan took %f seconds\n", t_plan);
-
-            //Increment t by t_plan:
-            t += floor(t_plan);
-            layer_index = layersize * t;
-            maplayer = &map[layer_index];
-            planner.updateMap(maplayer);
-        }
 
         if(planlength==0){
             break;
@@ -226,10 +224,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
         //Increment if no collision
         if(collision){
             printf("REPLANNING\n");
-            std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
+            t_startplan = std::chrono::high_resolution_clock::now();
             // planner->replan(&plan, &planlength, maplayer, arm_current);
             planner.replan(&plan, &planlength, maplayer, arm_current);
-            std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
+            t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
 
