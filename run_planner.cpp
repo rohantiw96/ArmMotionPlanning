@@ -160,7 +160,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // num_vertices = planner.returnNumberOfVertices();
 
     // LAZYPRM *planner = new LAZYPRM(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
-    LAZYPRM planner(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
+    // LAZYPRM planner(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
 
     // SamplingPlanners *planner;
     // switch(planner_id) {
@@ -178,7 +178,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     for(int t=0; t < t_size; t++){
         int layer_index = layersize * t;
         maplayer = &map[layer_index];
-        planner->updateMap(maplayer);
+        planner.updateMap(maplayer);
 
         if(t==0){
             std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
@@ -192,7 +192,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
             t += floor(t_plan);
             layer_index = layersize * t;
             maplayer = &map[layer_index];
-            planner->updateMap(maplayer);
+            planner.updateMap(maplayer);
         }
 
         // Check for collisions in the future of trajectory
