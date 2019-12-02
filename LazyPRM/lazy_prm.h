@@ -13,7 +13,7 @@ class LAZYPRM: public SamplingPlanners{
         double returnPathCost();
         int returnNumberOfVertices();
     private:
-        component_map map;
+        component_map comp_map;
         double epsilon_;
         int num_iteration_;
         int num_samples_;

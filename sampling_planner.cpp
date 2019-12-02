@@ -7,11 +7,12 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
   x_size_ = x_size;
   y_size_ = y_size;
   arm_goal_ = arm_goal;
+  printf("goal at\n");
+  printAngles(arm_goal_);
   arm_start_ = arm_start;
   numofDOFs_ = numofDOFs;
   generator_ = std::mt19937(std::random_device()());
   angle_distribution_ = std::uniform_real_distribution<double>(0, 2*PI);
-
   num_samples_ = 200;
 };
 
@@ -31,12 +32,13 @@ bool SamplingPlanners::interpolate(const std::vector<double> &start,const std::v
             angles.push_back(start[j]+ delta[j] * i);
         }
         if (!IsValidArmConfiguration(angles,true)){
+            printf("in colission\n");
+            printAngles(angles);
             return false;
         }
     }
     if (!IsValidArmConfiguration(end,true))
         return false;
-
     return true;
 }
 
@@ -264,9 +266,9 @@ double SamplingPlanners::getPathCost(const std::vector<std::vector<double>>& pat
 }
 
 bool SamplingPlanners::checkGoalAndStartForCollision(){
-    if (!IsValidArmConfiguration(arm_goal_,false))
+    if (!IsValidArmConfiguration(arm_goal_,true))
     {
-      printf("goal point is not within map boaundaries\n");
+      printf("goal point is in collision\n");
       return true;
     }
   if (!IsValidArmConfiguration(arm_start_,true))
