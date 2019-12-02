@@ -235,6 +235,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
             printf("REPLANNING\n");
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.replan(&plan, &planlength, arm_current);
+            printf("replanned\n");
             t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
@@ -243,6 +244,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
             //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
             for(int t_wait = t; t_wait < (t+=floor(t_plan)); t_wait++){
+                arm_traj[t_wait] = (double*) malloc(numofDOFs*sizeof(double));
                 for(int j = 0; j < numofDOFs; j++){ 
                     arm_traj[t_wait][j] = arm_current[j];
                 }
@@ -256,9 +258,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
         else{
             printf("MOVING ARM\n");
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
+            printf("next arm incremented\n");
             arm_current = arm_next;
-
+            printf("current arm updated\n");
             //insert into arm_traj
+            arm_traj[t] = (double*) malloc(numofDOFs*sizeof(double));
             for(int j = 0; j < numofDOFs; j++){ 
                 arm_traj[t][j] = arm_current[j];
             }
