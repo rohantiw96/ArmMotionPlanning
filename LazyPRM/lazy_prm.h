@@ -8,7 +8,7 @@ class LAZYPRM: public SamplingPlanners{
     public:
         LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs);
         void getFirstPlan(double ***plan,int *planlength);
-        void replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle);
+        void replan(double ***plan,int *planlength,std::vector<double> current_angle);
         void buildRoadMap();
         double returnPathCost();
         int returnNumberOfVertices();

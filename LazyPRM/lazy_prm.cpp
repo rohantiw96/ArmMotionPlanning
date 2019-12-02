@@ -270,7 +270,6 @@ void LAZYPRM::getFirstPlan(double ***plan,int *planlength){
 }
 
 void LAZYPRM::replan(double ***plan, int *planlength, std::vector<double> current_angle){
-    map_ = map;
     arm_start_ = current_angle;
     total_cost_= 0;
     std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
