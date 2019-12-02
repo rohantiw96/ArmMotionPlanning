@@ -149,11 +149,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     // Call Planner Here Exmaple: 
 
-    // SamplingPlanner planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,samples,num_iterations);
+    // SamplingPlanners planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     // planner.plan(&plan, &planlength);
     
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-    // planner.getFirstPlan(&plan, &planlength);
+    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    planner.getFirstPlan(&plan, &planlength);
     // planner.replan(&plan, &planlength,map,arm_start);
     // planner.plan(&plan, &planlength);
     // cost = planner.returnPathCost();
@@ -162,6 +162,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // LAZYPRM *planner = new LAZYPRM(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
     LAZYPRM planner(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
 
+    // SamplingPlanners *planner;
     // switch(planner_id) {
     //     case 0:
     //         LAZYPRM *temp = new LAZYPRM(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
@@ -200,8 +201,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         int future_plan_step = next_plan_step;
         for(int t_future = 0; t_future < lookahead; t_future++){
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-            // collision = planner->interpolate(maplayer, arm_future, arm_next);
-            collision = planner.interpolate(maplayer, arm_future, arm_next); 
+            collision = planner.interpolate(arm_future, arm_next); 
 
             if(collision){
                 break;

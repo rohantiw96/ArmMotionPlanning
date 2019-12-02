@@ -42,7 +42,8 @@ public:
                      const std::vector<double> &arm_goal,
                      int numofDOFs);
 
-    bool interpolate(double *map,const std::vector<double> &start,const std::vector<double> &end);
+    bool interpolate(const std::vector<double> &start,const std::vector<double> &end);
+    void updateMap(double *map);
 
 protected:
     double *map_;

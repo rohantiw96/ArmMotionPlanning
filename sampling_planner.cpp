@@ -15,8 +15,18 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
   num_samples_ = 200;
 };
 
-bool SamplingPlanners::interpolate(double*map,const std::vector<double> &start,const std::vector<double> &end){
-    map_ = map;
+void getFirstPlan(double ***plan,int *planlength)
+{}
+
+void replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle)
+{}
+
+void SamplingPlanners::updateMap(double *map)
+{
+  map_ = map;
+}
+
+bool SamplingPlanners::interpolate(const std::vector<double> &start,const std::vector<double> &end){
     std::vector<double> delta;
     for(int i=0;i<numofDOFs_;i++){
         delta.push_back((end[i] - start[i])/ (num_samples_ - 1));
@@ -35,6 +45,7 @@ bool SamplingPlanners::interpolate(double*map,const std::vector<double> &start,c
 
     return true;
 }
+
 void SamplingPlanners::printAngles(std::vector<double> angles)
 {
   for (auto angle : angles)
