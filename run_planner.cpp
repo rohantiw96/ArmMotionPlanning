@@ -258,7 +258,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
         else{
             printf("MOVING ARM\n");
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
+<<<<<<< Updated upstream
             printf("next arm incremented\n");
+=======
+            printf("INCREMENT ARM DONE\n");
+>>>>>>> Stashed changes
             arm_current = arm_next;
             printf("current arm updated\n");
             //insert into arm_traj
