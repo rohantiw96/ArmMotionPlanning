@@ -112,7 +112,6 @@ void LAZYPRM::removeEdge(const std::vector<double> &current_angle,const std::vec
 }
 
 std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node, std::vector<double> start_neighbor,bool &found_collision_free_path){
-    printf("backtracking\n");
     std::vector<double> current_angle = node;
     std::vector<std::vector<double>> path;
     bool success = true;
@@ -158,10 +157,10 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     while (!found_collision_free_path)
     {
         path_found = false;
-        if (!found_initial_path_)
+        // if (!found_initial_path_)
             start_neighbor = findNearestNeighbor(arm_start_);
-        else
-            start_neighbor = arm_start_;
+        // else
+            // start_neighbor = arm_start_;
         goal_neighbor = findNearestNeighbor(arm_goal_);
         came_from_.clear();
         final_path.clear();
@@ -204,17 +203,13 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
         if(path_found)
         {
             final_path = backTrack(goal_neighbor,start_neighbor,found_collision_free_path);
-            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> time_span = t2 - t1;
-            double time = time_span.count()/1000.0;
-            printf("finding shortest path took %f seconds\n",time);
-
         }
         else 
         {
             printf("dijkstra did not reach goal\n");
         }
     }
+
     return final_path;
 }
 
@@ -270,7 +265,6 @@ void LAZYPRM::getFirstPlan(double ***plan,int *planlength){
 }
 
 void LAZYPRM::replan(double ***plan, int *planlength, std::vector<double> current_angle){
-    map_ = map;
     arm_start_ = current_angle;
     total_cost_= 0;
     std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
