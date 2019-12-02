@@ -226,7 +226,7 @@ void LAZYPRM::buildRoadMap(){
     std::vector<std::vector<double>> k_nearest_neighbors;
     int initialized = false;
     while(iter < num_iteration_){
-        q_rand = getRandomAngleConfig(0,std::vector<double>{});
+        q_rand = getRandomAngleConfig();
         if (IsValidArmConfiguration(q_rand,false)){
             k_nearest_neighbors = findKNearestNeighbor(q_rand);
             if(k_nearest_neighbors.size()>0){

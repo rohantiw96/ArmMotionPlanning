@@ -234,7 +234,7 @@ void SamplingPlanners::wrapAngles(std::vector<double> &angles){
     }
 }
 
-std::vector<double> SamplingPlanners::getRandomAngleConfig(const double goal_bias_probability, const std::vector<double> arm_goal){
+std::vector<double> SamplingPlanners::getRandomAngleConfig(){
   std::vector<double> angles;
   for(int i=0;i<numofDOFs_;i++){
       angles.push_back(angle_distribution_(generator_));
@@ -264,7 +264,7 @@ double SamplingPlanners::getPathCost(const std::vector<std::vector<double>>& pat
 }
 
 bool SamplingPlanners::checkGoalAndStartForCollision(){
-    if (!IsValidArmConfiguration(arm_goal_,false))
+  if (!IsValidArmConfiguration(arm_goal_,false))
     {
       printf("goal point is not within map boaundaries\n");
       return true;
@@ -276,4 +276,3 @@ bool SamplingPlanners::checkGoalAndStartForCollision(){
     }
   return false;
 }
-
