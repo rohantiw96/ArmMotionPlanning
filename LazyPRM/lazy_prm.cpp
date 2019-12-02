@@ -52,7 +52,7 @@ std::vector<double> LAZYPRM::findNearestNeighbor(const std::vector<double> &q_ne
     double min_distance = std::numeric_limits<double>::max();
     for(const auto& node:map){
         euclidean_distance = euclideanDistance(node.first,q_new);
-        if(euclidean_distance < min_distance && interpolate(q_new,node.first)){
+        if(euclidean_distance < min_distance && interpolate(map_, q_new,node.first)){
             min_distance = euclidean_distance;
             nearest_neighbor = node.first;
         }
@@ -137,7 +137,7 @@ std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node, st
     // checking if interpolation between nodes are collision free
     for (int i = 0;i<path.size()-1;i++)
     {
-        if (!interpolate(path[i],path[i+1]))
+        if (!interpolate(map_, path[i],path[i+1]))
             {
                 removeEdge(path[i],path[i+1]);
                 return std::vector<std::vector<double>>{};

@@ -44,8 +44,6 @@ public:
 
     bool interpolate(const std::vector<double> &start,const std::vector<double> &end);
     void updateMap(double *map);
-    void getFirstPlan(double ***plan,int *planlength);
-    void replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle);
 
 protected:
     double *map_;
