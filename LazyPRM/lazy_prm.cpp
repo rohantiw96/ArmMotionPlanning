@@ -154,21 +154,28 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     std::vector<double> goal_neighbor;
     bool found_collision_free_path = false;
     bool path_found;
+    printf("before loop\n");
     while (!found_collision_free_path)
     {
+        printf("new A* because path was in collision\n");
         path_found = false;
-        // if (!found_initial_path_)
+        if (comp_map.find(arm_start_) != comp_map.end())
+            start_neighbor = arm_start_;
+        else
             start_neighbor = findNearestNeighbor(arm_start_);
         // else
-            // start_neighbor = arm_start_;
+        // start_neighbor = arm_start_;
+        printf("here1");        
         goal_neighbor = findNearestNeighbor(arm_goal_);
         came_from_.clear();
         final_path.clear();
+        printf("here2");
         if (comp_map.find(goal_neighbor)==comp_map.end() || comp_map.find(start_neighbor)==comp_map.end())
         {
             printf("start or goal node are disconnected\n");
-            break;
+            // break;
         }
+        printf("here3");
         std::unordered_map<std::vector<double>,double,container_hash<std::vector<double>>> g_values;
         for(const auto& nodes:comp_map){
             g_values[nodes.first] = std::numeric_limits<double>::max();
@@ -209,7 +216,7 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
             printf("dijkstra did not reach goal\n");
         }
     }
-
+    printf("after loop\n");
     return final_path;
 }
 
@@ -253,7 +260,6 @@ void LAZYPRM::getFirstPlan(double ***plan,int *planlength){
         {
             total_cost_ = getPathCost(path);
             found_initial_path_ = true;
-            printf("found initial path\n");
         } 
     }
     else
@@ -271,7 +277,7 @@ void LAZYPRM::replan(double ***plan, int *planlength, std::vector<double> curren
     if (!checkGoalAndStartForCollision()){
         path =  getShortestPath();
         if (path.size() > 0) total_cost_ = getPathCost(path);
+        else printf("path of length zero returned\n");
     }
-    printf("found replanned path\n");
     returnPathToMex(path,plan,planlength);
 }

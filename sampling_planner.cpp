@@ -7,8 +7,6 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
   x_size_ = x_size;
   y_size_ = y_size;
   arm_goal_ = arm_goal;
-  printf("goal at\n");
-  printAngles(arm_goal_);
   arm_start_ = arm_start;
   numofDOFs_ = numofDOFs;
   generator_ = std::mt19937(std::random_device()());
@@ -19,6 +17,7 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
 void SamplingPlanners::updateMap(double *map)
 {
   map_ = map;
+  printf("updated map\n");
 }
 
 bool SamplingPlanners::interpolate(const std::vector<double> &start,const std::vector<double> &end){
@@ -254,6 +253,7 @@ void SamplingPlanners::returnPathToMex(const std::vector<std::vector<double>>& p
             }
         }
     }
+    printf("path given to mex\n");
 }
 double SamplingPlanners::getPathCost(const std::vector<std::vector<double>>& path){
     double total_cost = 0;
