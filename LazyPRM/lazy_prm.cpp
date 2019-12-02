@@ -170,7 +170,7 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
         if (map.find(goal_neighbor)==map.end() || map.find(start_neighbor)==map.end())
         {
             printf("start or goal node are disconnected\n");
-            found_collision_free_path == true;
+            found_collision_free_path = true;
             break;
         }
         std::unordered_map<std::vector<double>,double,container_hash<std::vector<double>>> g_values;

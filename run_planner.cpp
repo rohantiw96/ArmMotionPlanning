@@ -127,6 +127,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int planlength = 0;
 
     //keep track of arm trajectory
+    //TODO: implement this and return to matlab instead of plan
     double** arm_traj = NULL;
     int arm_traj_length = 0;
 
@@ -176,6 +177,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     std::vector<double> arm_future = arm_next;
     int next_plan_step = 1;
     for(int t=0; t < t_size; t++){
+        printf("timestep: %d\n", t);
         int layer_index = layersize * t;
         maplayer = &map[layer_index];
         planner.updateMap(maplayer);
@@ -188,6 +190,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
 
+            printf("first plan took %f seconds\n", t_plan);
+
             //Increment t by t_plan:
             t += floor(t_plan);
             layer_index = layersize * t;
@@ -195,16 +199,22 @@ void mexFunction( int nlhs, mxArray *plhs[],
             planner.updateMap(maplayer);
         }
 
+        if(planlength==0){
+            break;
+        }
+
         // Check for collisions in the future of trajectory
         // Interpolate:
         bool collision = false;
         int future_plan_step = next_plan_step;
         for(int t_future = 0; t_future < lookahead; t_future++){
+            printf("LOOK AHEAD\n");
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
             collision = planner.interpolate(arm_future, arm_next); 
 
             if(collision){
                 break;
+                printf("COLLISION FOUND\n");
             }
             if(plan_step_reached){
                 future_plan_step++;
@@ -215,12 +225,15 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
         //Increment if no collision
         if(collision){
+            printf("REPLANNING\n");
             std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
             // planner->replan(&plan, &planlength, maplayer, arm_current);
             planner.replan(&plan, &planlength, maplayer, arm_current);
             std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
+
+            printf("replanning took %f seconds\n", t_plan);
 
             //Increment t by t_plan:
             t += floor(t_plan);
@@ -229,6 +242,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
             arm_next = arm_current;
         }
         else{
+            printf("MOVING ARM\n");
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
             // HOW TO SAVE AND RETURN TO MATLAB
             arm_current = arm_next;
