@@ -204,16 +204,16 @@ void mexFunction( int nlhs, mxArray *plhs[],
         }
 
         // Check for collisions in the future of trajectory
-        bool collision = false;
+        bool notcollision = true;
         int future_plan_step = next_plan_step;
         for(int t_future = 0; t_future < lookahead; t_future++){
             printf("LOOK AHEAD\n");
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-            collision = planner.interpolate(arm_future, arm_next); 
+            notcollision = planner.interpolate(arm_future, arm_next); 
 
-            if(collision){
-                break;
+            if(!notcollision){
                 printf("COLLISION FOUND\n");
+                break;
             }
             if(plan_step_reached){
                 future_plan_step++;
@@ -222,7 +222,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
         }
 
         //Increment if no collision
-        if(collision){
+        printf("not in collision: %d\n", notcollision);
+        if(!notcollision){
             printf("REPLANNING\n");
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.replan(&plan, &planlength, arm_current);
