@@ -269,7 +269,7 @@ void LAZYPRM::getFirstPlan(double ***plan,int *planlength){
     returnPathToMex(path,plan,planlength);
 }
 
-void LAZYPRM::replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle){
+void LAZYPRM::replan(double ***plan, int *planlength, std::vector<double> current_angle){
     map_ = map;
     arm_start_ = current_angle;
     total_cost_= 0;
@@ -278,6 +278,6 @@ void LAZYPRM::replan(double ***plan,int *planlength,double *map,std::vector<doub
         path =  getShortestPath();
         if (path.size() > 0) total_cost_ = getPathCost(path);
     }
-    printf("found replaned path\n");
+    printf("found replanned path\n");
     returnPathToMex(path,plan,planlength);
 }

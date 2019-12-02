@@ -3,6 +3,7 @@
 #include <time.h>
 #include "include/sampling_planner.h"
 #include "LazyPRM/lazy_prm.h"
+// #include "RRTConn/rrt_conn.h"
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -127,8 +128,15 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int planlength = 0;
 
     //keep track of arm trajectory
-    double** arm_traj = NULL;
-    int arm_traj_length = 0;
+    //TODO: implement this and return to matlab instead of plan
+    double** arm_traj = (double**) malloc(t_size*sizeof(double*));
+
+    //populate arm_traj with arm_start
+    arm_traj[0] = (double*) malloc(numofDOFs*sizeof(double));
+    for(int j = 0; j < numofDOFs; j++){ 
+        arm_traj[0][j] = arm_start[j];
+    }
+    int arm_traj_length = 1;
 
     //Tunable parameters
     int lookahead = 3;
@@ -152,8 +160,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // SamplingPlanners planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     // planner.plan(&plan, &planlength);
     
-    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-    planner.getFirstPlan(&plan, &planlength);
     // planner.replan(&plan, &planlength,map,arm_start);
     // planner.plan(&plan, &planlength);
     // cost = planner.returnPathCost();
@@ -170,68 +176,85 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //         break;
     // }
 
+    //initialize planner & graph:
+    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
+    // planner->getFirstPlan(&plan, &planlength);
+    planner.getFirstPlan(&plan, &planlength);
+    std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
+    double t_plan = t_plandiff.count()/1000.0;
+
+    printf("first plan took %f seconds\n", t_plan);
+
     int layersize = x_size * y_size;
     std::vector<double> arm_current = arm_start;
     std::vector<double> arm_next = arm_current;
     std::vector<double> arm_future = arm_next;
     int next_plan_step = 1;
+
     for(int t=0; t < t_size; t++){
+        printf("timestep: %d\n", t);
         int layer_index = layersize * t;
         maplayer = &map[layer_index];
         planner.updateMap(maplayer);
 
-        if(t==0){
-            std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-            // planner->getFirstPlan(&plan, &planlength);
-            planner.getFirstPlan(&plan, &planlength);
-            std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
-            double t_plan = t_plandiff.count()/1000.0;
-
-            //Increment t by t_plan:
-            t += floor(t_plan);
-            layer_index = layersize * t;
-            maplayer = &map[layer_index];
-            planner.updateMap(maplayer);
+        if(planlength==0){
+            break;
         }
 
         // Check for collisions in the future of trajectory
-        // Interpolate:
         bool collision = false;
         int future_plan_step = next_plan_step;
         for(int t_future = 0; t_future < lookahead; t_future++){
+            printf("LOOK AHEAD\n");
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
             collision = planner.interpolate(arm_future, arm_next); 
 
             if(collision){
                 break;
+                printf("COLLISION FOUND\n");
             }
             if(plan_step_reached){
                 future_plan_step++;
             }
-
             arm_next = arm_future;
         }
 
         //Increment if no collision
         if(collision){
-            std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-            // planner->replan(&plan, &planlength, maplayer, arm_current);
-            planner.replan(&plan, &planlength, maplayer, arm_current);
-            std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
+            printf("REPLANNING\n");
+            t_startplan = std::chrono::high_resolution_clock::now();
+            planner.replan(&plan, &planlength, arm_current);
+            t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
 
-            //Increment t by t_plan:
+            printf("replanning took %f seconds\n", t_plan);
+
+            //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
+            for(int t_wait = t; t_wait < (t+=floor(t_plan)); t_wait++){
+                for(int j = 0; j < numofDOFs; j++){ 
+                    arm_traj[t_wait][j] = arm_current[j];
+                }
+            }
             t += floor(t_plan);
 
-            //reset arm_next:
+            //reset arm_next and next_plan_step:
             arm_next = arm_current;
+            next_plan_step = 1;
         }
         else{
+            printf("MOVING ARM\n");
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
-            // HOW TO SAVE AND RETURN TO MATLAB
             arm_current = arm_next;
+
+            //insert into arm_traj
+            for(int j = 0; j < numofDOFs; j++){ 
+                arm_traj[t][j] = arm_current[j];
+            }
+
+            //increment plan step if reached
             if(next_plan_reached){
                 next_plan_step++;
             }

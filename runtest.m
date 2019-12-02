@@ -10,6 +10,6 @@ close all;
 fprintf(1, 'plan of length %d was found\n', size(armplan,1));
 
 %Animate
-animate(map, armplan, armplanlength);
+animate(map, armplan, size(armplan,1));
 
 end
