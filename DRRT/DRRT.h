@@ -1,11 +1,12 @@
 #pragma once
 #include "sampling_planner.h"
 
-class DRRT: protected SamplingPlanners{
+class DRRT: public SamplingPlanners{
     public:
         DRRT(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs,double epsilon,int sampling_rate,double bias_probability);
-        void plan(double ***plan,int *planlength);
+        void getFirstPlan(double ***plan,int *planlength);
         double returnPathCost();
+        void replan(double ***plan,int *planlength,const std::vector<double>& current_angle);
         int returnNumberOfVertices();
     protected:
         double epsilon_;
@@ -28,6 +29,5 @@ class DRRT: protected SamplingPlanners{
         void trimNodes();
         void deleteAllChildNodes(const std::vector<double>& parent);
         void deleteEdge(const std::vector<double>& parent,const std::vector<double> child);
-        void replan(double ***plan,int *planlength,const std::vector<double>& current_angle);
         void regrowTree(const std::vector<double> current_angle);
 };
