@@ -266,7 +266,7 @@ double SamplingPlanners::getPathCost(const std::vector<std::vector<double>>& pat
 bool SamplingPlanners::checkGoalAndStartForCollision(){
     if (!IsValidArmConfiguration(arm_goal_,false))
     {
-      printf("goal point is in not in the within map boaundaries\n");
+      printf("goal point is not within map boaundaries\n");
       return true;
     }
   if (!IsValidArmConfiguration(arm_start_,true))

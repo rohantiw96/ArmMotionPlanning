@@ -256,10 +256,18 @@ void LAZYPRM::getFirstPlan(double ***plan,int *planlength){
     if (!checkGoalAndStartForCollision()){
         buildRoadMap();
         path =  getShortestPath();
-        if (path.size() > 0) total_cost_ = getPathCost(path);
+        if (path.size() > 0)
+        {
+            total_cost_ = getPathCost(path);
+            found_initial_path_ = true;
+            printf("found initial path\n");
+        } 
     }
-    found_initial_path_ = true;
-    printf("found initial path\n");
+    else
+    {
+        printf("no path found\n");
+    }
+    
     returnPathToMex(path,plan,planlength);
 }
 
