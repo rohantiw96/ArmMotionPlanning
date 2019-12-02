@@ -3,6 +3,7 @@
 #include <time.h>
 #include "include/sampling_planner.h"
 #include "LazyPRM/lazy_prm.h"
+#include "DRRT/DRRT.h"
 // #include "RRTConn/rrt_conn.h"
 #include <iostream>
 #include <vector>
@@ -177,7 +178,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // }
 
     //initialize planner & graph:
-    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+
+
+    //params for DRRT
+    double epsilon = 1;
+    double interpolation_sampling = 50;
+    double goal_bias_probability = 0.2;
+    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability);
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
     // planner->getFirstPlan(&plan, &planlength);
     planner.getFirstPlan(&plan, &planlength);
@@ -229,6 +237,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
             planlength = 0;
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.replan(&plan, &planlength, arm_current);
+            printf("replanned\n");
             t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
@@ -237,6 +246,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
             //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
             for(int t_wait = t; t_wait < (t+=floor(t_plan)); t_wait++){
+                arm_traj[t_wait] = (double*) malloc(numofDOFs*sizeof(double));
                 for(int j = 0; j < numofDOFs; j++){ 
                     arm_traj[t_wait][j] = arm_current[j];
                 }
@@ -250,9 +260,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
         else{
             printf("MOVING ARM\n");
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
+            printf("next arm incremented\n");
             arm_current = arm_next;
-
+            printf("current arm updated\n");
             //insert into arm_traj
+            arm_traj[t] = (double*) malloc(numofDOFs*sizeof(double));
             for(int j = 0; j < numofDOFs; j++){ 
                 arm_traj[t][j] = arm_current[j];
             }

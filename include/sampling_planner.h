@@ -66,7 +66,6 @@ protected:
     int IsValidLineSegment(const double x0, const double y0, const double x1, const double y1,bool checkCollision);
     int IsValidArmConfiguration(std::vector<double> angles,bool checkCollision);
     int getMapIndex(const int x, const int y);
-    std::vector<double> getRandomAngleConfig(const double goal_bias_probability, const std::vector<double> arm_goal);
     double euclideanDistance(const std::vector<double> &q_1,const std::vector<double> &q_2);
     double getNorm(const std::vector<double>& vec);
     void wrapAngles(std::vector<double> &angles);
@@ -74,6 +73,5 @@ protected:
     double getPathCost(const std::vector<std::vector<double>>& path);
     bool checkGoalAndStartForCollision();
     void printAngles(std::vector<double> angles);
-
-
+    std::vector<double> getRandomAngleConfig();
 };
