@@ -15,12 +15,6 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
   num_samples_ = 200;
 };
 
-void getFirstPlan(double ***plan,int *planlength)
-{}
-
-void replan(double ***plan,int *planlength,double *map,std::vector<double> current_angle)
-{}
-
 void SamplingPlanners::updateMap(double *map)
 {
   map_ = map;
