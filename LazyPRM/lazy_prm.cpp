@@ -22,12 +22,11 @@ LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &ar
         epsilon_ = 1;
         num_iteration_ = 100000;
         found_initial_path_ = false;
-
 }
 
 int LAZYPRM::returnNumberOfVertices()
 {
-    return map.size();
+    return comp_map.size();
 }
 double LAZYPRM::getHeuristic(std::vector<double> current_node,std::vector<double> goal)
 {
@@ -36,7 +35,7 @@ double LAZYPRM::getHeuristic(std::vector<double> current_node,std::vector<double
 std::vector<std::vector<double>> LAZYPRM::findKNearestNeighbor(const std::vector<double> &q_new){
     std::vector<std::vector<double>> k_nearest_neighbor;
     double euclidean_distance = 0;
-        for(const auto& node:map){
+        for(const auto& node:comp_map){
             euclidean_distance = euclideanDistance(node.first,q_new);
             if(euclidean_distance < epsilon_){ //dont check for collisions
                 k_nearest_neighbor.push_back(node.first);
@@ -49,30 +48,29 @@ std::vector<double> LAZYPRM::findNearestNeighbor(const std::vector<double> &q_ne
     std::vector<double> nearest_neighbor;
     double euclidean_distance = 0;
     double min_distance = std::numeric_limits<double>::max();
-    for(const auto& node:map){
+    for(const auto& node:comp_map){
         euclidean_distance = euclideanDistance(node.first,q_new);
         if(euclidean_distance < min_distance && interpolate(q_new,node.first)){
             min_distance = euclidean_distance;
             nearest_neighbor = node.first;
         }
     }
-    printf("distance %f\n", min_distance);
     return nearest_neighbor;
 }
 
 void LAZYPRM::addSample(std::vector<double> &q_new,std::vector<double> &q_neighbor){
-    map[q_neighbor].push_back(q_new);
-    map[q_new].push_back(q_neighbor);
+    comp_map[q_neighbor].push_back(q_new);
+    comp_map[q_new].push_back(q_neighbor);
 }
 
 void LAZYPRM::removeNode(const std::vector<double> &current_angle)
 {
-    auto current_node = map.find(current_angle);
+    auto current_node = comp_map.find(current_angle);
     int counter;
     for (auto &neighbor_nodes : current_node->second)
     {
         counter = 0;
-        auto neighbor_nodes_neighbors =  &map.find(neighbor_nodes)->second;
+        auto neighbor_nodes_neighbors =  &comp_map.find(neighbor_nodes)->second;
         for (auto &neighbors_neighbor : *neighbor_nodes_neighbors)
         {
             if (neighbors_neighbor == current_angle)
@@ -83,12 +81,12 @@ void LAZYPRM::removeNode(const std::vector<double> &current_angle)
             counter++;
         }
     }
-    map.erase(current_node);
+    comp_map.erase(current_node);
 }
 
 void LAZYPRM::removeEdge(const std::vector<double> &current_angle,const std::vector<double> &next_angle)
 {
-    auto neighbor_nodes_neighbors = &map.find(current_angle)->second;
+    auto neighbor_nodes_neighbors = &comp_map.find(current_angle)->second;
     int counter = 0;
     for (auto &neighbors_neighbor : *neighbor_nodes_neighbors)
     {
@@ -100,7 +98,7 @@ void LAZYPRM::removeEdge(const std::vector<double> &current_angle,const std::vec
         counter++;
     }
 
-    neighbor_nodes_neighbors = &map.find(next_angle)->second;
+    neighbor_nodes_neighbors = &comp_map.find(next_angle)->second;
     counter = 0;
     for (auto &neighbors_neighbor : *neighbor_nodes_neighbors)
     {
@@ -167,13 +165,13 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
         goal_neighbor = findNearestNeighbor(arm_goal_);
         came_from_.clear();
         final_path.clear();
-        if (map.find(goal_neighbor)==map.end() || map.find(start_neighbor)==map.end())
+        if (comp_map.find(goal_neighbor)==comp_map.end() || comp_map.find(start_neighbor)==comp_map.end())
         {
             printf("start or goal node are disconnected\n");
             break;
         }
         std::unordered_map<std::vector<double>,double,container_hash<std::vector<double>>> g_values;
-        for(const auto& nodes:map){
+        for(const auto& nodes:comp_map){
             g_values[nodes.first] = std::numeric_limits<double>::max();
         }
         // std::priority_queue<std::vector<double>> list;
@@ -193,7 +191,7 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
             {
                 path_found = true;
             }
-            neighbors = map.find(current)->second;
+            neighbors = comp_map.find(current)->second;
             for(const auto& n:neighbors){
                 g_val = euclideanDistance(current,n) + g_values[current];
                 if (g_val < g_values[n]){
@@ -238,7 +236,7 @@ void LAZYPRM::buildRoadMap(){
             else if (!initialized && k_nearest_neighbors.size()==0)
             {
                 std::vector<std::vector<double>> empty_neighbor{};
-                map[q_rand] = empty_neighbor;
+                comp_map[q_rand] = empty_neighbor;
                 initialized = true;
             }
                
