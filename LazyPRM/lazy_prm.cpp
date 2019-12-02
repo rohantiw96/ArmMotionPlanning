@@ -20,8 +20,7 @@ struct CompareNode
 LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs)
     :SamplingPlanners(map,x_size,y_size,arm_start,arm_goal,numofDOFs){
         epsilon_ = 1;
-        num_iteration_ = 150000;
-        num_samples_ = 200;
+        num_iteration_ = 100000;
         found_initial_path_ = false;
 
 }
@@ -57,6 +56,7 @@ std::vector<double> LAZYPRM::findNearestNeighbor(const std::vector<double> &q_ne
             nearest_neighbor = node.first;
         }
     }
+    printf("distance %f\n", min_distance);
     return nearest_neighbor;
 }
 
@@ -170,7 +170,6 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
         if (map.find(goal_neighbor)==map.end() || map.find(start_neighbor)==map.end())
         {
             printf("start or goal node are disconnected\n");
-            found_collision_free_path = true;
             break;
         }
         std::unordered_map<std::vector<double>,double,container_hash<std::vector<double>>> g_values;
@@ -205,18 +204,19 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
             }
         }
         if(path_found)
+        {
             final_path = backTrack(goal_neighbor,start_neighbor,found_collision_free_path);
+            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> time_span = t2 - t1;
+            double time = time_span.count()/1000.0;
+            printf("finding shortest path took %f seconds\n",time);
+
+        }
         else 
         {
             printf("dijkstra did not reach goal\n");
-            return std::vector<std::vector<double>>{};
         }
     }
-    std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> time_span = t2 - t1;
-    double time = time_span.count()/1000.0;
-    printf("finding shortest path took %f seconds\n",time);
-
     return final_path;
 }
 
