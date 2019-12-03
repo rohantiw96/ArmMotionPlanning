@@ -112,7 +112,6 @@ void LAZYPRM::removeEdge(const std::vector<double> &current_angle,const std::vec
 }
 
 std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node, std::vector<double> start_neighbor,bool &found_collision_free_path){
-    printf("backtracking\n");
     std::vector<double> current_angle = node;
     std::vector<std::vector<double>> path;
     bool success = true;
@@ -158,11 +157,16 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     while (!found_collision_free_path)
     {
         path_found = false;
-        if (!found_initial_path_)
-            start_neighbor = findNearestNeighbor(arm_start_);
-        else
+        if (comp_map.find(arm_start_) != comp_map.end())
             start_neighbor = arm_start_;
+        else
+            start_neighbor = findNearestNeighbor(arm_start_);
+
         goal_neighbor = findNearestNeighbor(arm_goal_);
+        printf("start node\n");
+        printAngles(start_neighbor);
+        printf("goal node\n");
+        printAngles(goal_neighbor);
         came_from_.clear();
         final_path.clear();
         if (comp_map.find(goal_neighbor)==comp_map.end() || comp_map.find(start_neighbor)==comp_map.end())
@@ -204,11 +208,6 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
         if(path_found)
         {
             final_path = backTrack(goal_neighbor,start_neighbor,found_collision_free_path);
-            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> time_span = t2 - t1;
-            double time = time_span.count()/1000.0;
-            printf("finding shortest path took %f seconds\n",time);
-
         }
         else 
         {
@@ -219,6 +218,7 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
 }
 
 void LAZYPRM::buildRoadMap(){
+    printf("building prm\n");
     int iter = 0;
     std::vector<double> q_rand;
     std::vector<std::vector<double>> k_nearest_neighbors;
@@ -243,7 +243,7 @@ void LAZYPRM::buildRoadMap(){
         }
         iter++;
     }
-    printf("built map\n");
+    printf("built prm\n");
 }
 double LAZYPRM::returnPathCost(){
     return total_cost_;
@@ -258,7 +258,6 @@ void LAZYPRM::getFirstPlan(double ***plan,int *planlength){
         {
             total_cost_ = getPathCost(path);
             found_initial_path_ = true;
-            printf("found initial path\n");
         } 
     }
     else
@@ -276,7 +275,7 @@ void LAZYPRM::replan(double ***plan, int *planlength, std::vector<double> curren
     if (!checkGoalAndStartForCollision()){
         path =  getShortestPath();
         if (path.size() > 0) total_cost_ = getPathCost(path);
+        else printf("path of length zero returned\n");
     }
-    printf("found replanned path\n");
     returnPathToMex(path,plan,planlength);
 }
