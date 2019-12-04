@@ -4,9 +4,9 @@
 class DRRT: public SamplingPlanners{
     public:
         DRRT(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs,double epsilon,int sampling_rate,double bias_probability,int max_iterations);
-        void getFirstPlan(double ***plan,int *planlength);
+        void getFirstPlan(std::vector<std::vector<double>> &plan);
         double returnPathCost();
-        void replan(double ***plan,int *planlength,const std::vector<double>& current_angle);
+        void replan(std::vector<std::vector<double>> &plan,const std::vector<double>& current_angle);
         int returnNumberOfVertices();
     protected:
         double epsilon_;

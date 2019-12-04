@@ -118,6 +118,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double* armgoal_anglesV_rad = mxGetPr(ARMGOAL_IN);
     std::vector<double> arm_start(armstart_anglesV_rad, armstart_anglesV_rad + numofDOFs);
     std::vector<double> arm_goal(armgoal_anglesV_rad, armgoal_anglesV_rad + numofDOFs);
+    
     //get the planner id
     int planner_id = (int)*mxGetPr(PLANNER_ID_IN);
     if(planner_id < 0 || planner_id > 3){
@@ -125,9 +126,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 "planner id should be between 0 and 3 inclusive");         
     }
     
-    //call the planner
-    double** plan = NULL;
-    int planlength = 0;
+    //plan variables assignment
+    std::vector<std::vector<double>> plan{};
 
     //keep track of arm trajectory
     //TODO: implement this and return to matlab instead of plan
@@ -141,67 +141,33 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int arm_traj_length = 1;
 
     //Tunable parameters
-    int lookahead = 10;
+    int lookahead = 5;
     double maxjntspeed = 0.5;
     
-    //you can may be call the corresponding planner function here
-    double cost = 0;
-    double num_vertices = 0;
-    int num_iterations = 100000;  
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-
-    printf("0: %f, 2500: %f, 5000: %f\n", map[0], map[2500], map[5000]);
     
     double* maplayer = &map[2500];
     double* maplayer_inflated = &map_inflated[2500];
-    printf("0: %f, 2500: %f, 5000: %f\n", maplayer[0], maplayer[2500], maplayer[5000]);
-
     printf("map xdim: %d, ydim: %d, tdim: %d\n", x_size, y_size, t_size);
 
-    // Call Planner Here Exmaple: 
-
-    // SamplingPlanners planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-    // planner.plan(&plan, &planlength);
-    
-    // planner.replan(&plan, &planlength,map,arm_start);
-    // planner.plan(&plan, &planlength);
-    // cost = planner.returnPathCost();
-    // num_vertices = planner.returnNumberOfVertices();
-
-    // LAZYPRM *planner = new LAZYPRM(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
-    // LAZYPRM planner(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
-
-    // SamplingPlanners *planner;
-    // switch(planner_id) {
-    //     case 0:
-    //         LAZYPRM *temp = new LAZYPRM(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
-    //         planner = temp;
-    //         break;
-    // }
-
-    //initialize planner & graph:
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-
-
     SamplingPlanners planner_inflated(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
-
-
-    //LAZY PRM
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
 
     //params for DRRT
     double epsilon = 0.8;
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
-    int max_iterations = 500000;
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    int max_iterations = 50000;
     DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+
+    // LAZY PRM
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    
+    
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-    planner.getFirstPlan(&plan, &planlength);
+    planner.getFirstPlan(plan);
     std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
     double t_plan = t_plandiff.count()/1000.0;
-
+    printf("Total length %d\n",plan.size());
     printf("first plan took %f seconds\n", t_plan);
 
     int layersize = x_size * y_size;
@@ -217,7 +183,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         maplayer_inflated = &map_inflated[layer_index];
         planner_inflated.updateMap(maplayer_inflated);
 
-        if(planlength==0){
+        if(plan.size()==0){
             break;
         }
 
@@ -251,6 +217,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.updateMap(maplayer);
             planner.replan(&plan, &planlength, arm_current);
+            printf("Total length %f\n",planlength);
             t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
@@ -297,9 +264,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     printf("Planner Took: %f seconds\n",time);
     // printf("Planner returned plan of length=%d\n", planlength); 
-    printf("Total Cost %f\n",cost);
-    printf("Number of Vertices %f\n",num_vertices);
     /* Create return values */
+    arm_traj_length = planlength;
     if(arm_traj_length > 0)
     {
         PLAN_OUT = mxCreateNumericMatrix( (mwSize)arm_traj_length, (mwSize)numofDOFs, mxDOUBLE_CLASS, mxREAL); 
