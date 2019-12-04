@@ -193,6 +193,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double epsilon = 0.6;
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.2;
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability);
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
     planner.getFirstPlan(&plan, &planlength);
@@ -241,6 +242,9 @@ void mexFunction( int nlhs, mxArray *plhs[],
         printf("not in collision: %d\n", notcollision);
         if(!notcollision){
             printf("REPLANNING\n");
+
+            // Check if arm_current is in collision
+            
             plan = NULL;
             planlength = 0;
             t_startplan = std::chrono::high_resolution_clock::now();
@@ -258,6 +262,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 for(int j = 0; j < numofDOFs; j++){ 
                     arm_traj[t_wait][j] = arm_current[j];
                 }
+                arm_traj_length++;
             }
             t += floor(t_plan);
 
@@ -276,6 +281,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
             for(int j = 0; j < numofDOFs; j++){ 
                 arm_traj[t][j] = arm_current[j];
             }
+            arm_traj_length++;
 
             //increment plan step if reached
             if(next_plan_reached){
@@ -293,17 +299,17 @@ void mexFunction( int nlhs, mxArray *plhs[],
     printf("Total Cost %f\n",cost);
     printf("Number of Vertices %f\n",num_vertices);
     /* Create return values */
-    if(planlength > 0)
+    if(arm_traj_length > 0)
     {
-        PLAN_OUT = mxCreateNumericMatrix( (mwSize)planlength, (mwSize)numofDOFs, mxDOUBLE_CLASS, mxREAL); 
+        PLAN_OUT = mxCreateNumericMatrix( (mwSize)arm_traj_length, (mwSize)numofDOFs, mxDOUBLE_CLASS, mxREAL); 
         double* plan_out = mxGetPr(PLAN_OUT);        
         //copy the values
         int i,j;
-        for(i = 0; i < planlength; i++)
+        for(i = 0; i < arm_traj_length; i++)
         {
             for (j = 0; j < numofDOFs; j++)
             {
-                plan_out[j*planlength + i] = plan[i][j];
+                plan_out[j*arm_traj_length + i] = arm_traj[i][j];
             }
         }
     }
@@ -323,7 +329,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     PATHCOST_OUT = mxCreateNumericMatrix( (mwSize)1, (mwSize)1, mxDOUBLE_CLASS, mxREAL);
     NUMVERTICES_OUT = mxCreateNumericMatrix( (mwSize)1, (mwSize)1, mxDOUBLE_CLASS, mxREAL); 
     int* planlength_out = (int*) mxGetPr(PLANLENGTH_OUT);
-    *planlength_out = planlength;
+    *planlength_out = arm_traj_length;
     double* plantime_out = (double*) mxGetPr(PATHTIME_OUT);
     *plantime_out = time;
     double* plancost_out = (double*) mxGetPr(PATHCOST_OUT);
