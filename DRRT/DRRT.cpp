@@ -184,13 +184,14 @@ void DRRT::getFirstPlan(double*** plan,int* planlength){
         printf("Total Cost %f\n",total_cost_);
     }
     else{
+        printf("No Path Found, Max iterations exceeded\n");
         total_cost_ = 0;
     }
     returnPathToMex(path,plan,planlength);
     return;
 }
 
-void DRRT::regrowTree(const std::vector<double> current_angle){
+bool DRRT::regrowTree(const std::vector<double> current_angle){
     bool reachedCurrentState = false;
     std::vector<double> q_rand;
     std::vector<double> q_near;
@@ -198,6 +199,8 @@ void DRRT::regrowTree(const std::vector<double> current_angle){
     std::vector<double> collision_free_configeration;
     arm_start_ = current_angle;
     printf("Tree Size %d\n",tree_.size());
+    int max_iterations = 5000;
+    int count = 0;
     if (!checkGoalAndStartForCollision()){
         while(!reachedCurrentState){
             q_rand = biasedAngleSampling(bias_probability_,current_angle);
@@ -212,20 +215,30 @@ void DRRT::regrowTree(const std::vector<double> current_angle){
                     reachedCurrentState = true;
                 }
             }
+            if(count > max_iterations){
+                printf("No Path Found During Replanning, Max iterations exceeded\n");
+                return false;
+            }
+            printf("%d\n",count);
+            count++;
         }
+        return true;
     }
     else{
         printf("Current Position in Collision\n");
+        return false;
     } 
 }
 void DRRT::replan(double ***plan,int *planlength,const std::vector<double>& current_angle){
+    std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
     printf("REPLANNING DRRT\n");
     invalidateNodes();
     printf("Invalidated Nodes\n");
     trimNodes();
     printf("Trimed Nodes\n");
-    regrowTree(current_angle);
-    printf("Regrown Tree\n");
-    std::vector<std::vector<double>> path = getPath(current_angle,arm_goal_);
+    if(regrowTree(current_angle)){
+        printf("Regrown Tree\n");
+        path = getPath(current_angle,arm_goal_);
+    }
     returnPathToMex(path,plan,planlength);
 }
