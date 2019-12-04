@@ -1,11 +1,11 @@
 function [envmap] = gen_map_seq_infl(mapsize, obstaclesize, actionvec, startx, starty,inflation)
 
 envmap = zeros(mapsize, mapsize, length(actionvec));
-curr_pos = [startx, starty];
-
+curr_pos = [startx-inflation, starty-inflation];
+obstaclesize= obstaclesize + 2*inflation*ones(1,2);
 for idx=1:length(actionvec)
-    obstacle_end_x = curr_pos(1) + obstaclesize(1)-1;
-    obstacle_end_y = curr_pos(2) + obstaclesize(2)-1;
+    obstacle_end_x = curr_pos(1) + obstaclesize(1)-1+2*inflation;
+    obstacle_end_y = curr_pos(2) + obstaclesize(2)-1+2*inflation;
     
     % check if object goes off the map
     rollover_start = curr_pos;
