@@ -15,6 +15,7 @@
 #define	ARMSTART_IN	prhs[1]
 #define	ARMGOAL_IN     prhs[2]
 #define	PLANNER_ID_IN     prhs[3]
+#define	MAP_INFLATED_IN      prhs[4]
 
 /* Planner Ids */
 
@@ -87,10 +88,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
      
 { 
     /* Check for proper number of arguments */    
-    if (nrhs != 4) { 
+    if (nrhs != 5) { 
 	    mexErrMsgIdAndTxt( "MATLAB:planner:invalidNumInputs",
                 "Four input arguments required."); 
-    } else if (nlhs != 5) {
+    } else if (nlhs != 6) {
 	    mexErrMsgIdAndTxt( "MATLAB:planner:maxlhs",
                 "One output argument required."); 
     } 
@@ -101,6 +102,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int t_size = y_size/x_size;
     y_size = x_size;
     double* map = mxGetPr(MAP_IN);
+    double* map_inflated = mxGetPr(MAP_INFLATED_IN);
     
     /* get the start and goal angles*/     
     int numofDOFs = (int) (MAX(mxGetM(ARMSTART_IN), mxGetN(ARMSTART_IN)));
@@ -151,6 +153,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     printf("0: %f, 2500: %f, 5000: %f\n", map[0], map[2500], map[5000]);
     
     double* maplayer = &map[2500];
+    double* maplayer_inflated = &map_inflated[2500];
     printf("0: %f, 2500: %f, 5000: %f\n", maplayer[0], maplayer[2500], maplayer[5000]);
 
     printf("map xdim: %d, ydim: %d, tdim: %d\n", x_size, y_size, t_size);
@@ -180,16 +183,17 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
 
 
+    SamplingPlanners planner_inflated(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
+
+
+    //LAZY PRM
+    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+
     //params for DRRT
     double epsilon = 0.6;
     double interpolation_sampling = 50;
-<<<<<<< HEAD
-    double goal_bias_probability = 0.1;
-=======
     double goal_bias_probability = 0.2;
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
->>>>>>> f122a42d8e34b04065ccb88c6db82669582ab99a
-    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability);
+    // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability);
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
     planner.getFirstPlan(&plan, &planlength);
     std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
@@ -208,7 +212,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
         printf("timestep: %d\n", t);
         int layer_index = layersize * t;
         maplayer = &map[layer_index];
-        planner.updateMap(maplayer);
+        maplayer_inflated = &map_inflated[layer_index];
+        planner_inflated.updateMap(maplayer_inflated);
 
         if(planlength==0){
             break;
@@ -220,7 +225,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         for(int t_future = 0; t_future < lookahead; t_future++){
             printf("LOOK AHEAD\n");
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-            notcollision = planner.interpolate(arm_future, arm_next); 
+            notcollision = planner_inflated.interpolate(arm_future, arm_next); 
 
             if(!notcollision){
                 printf("COLLISION FOUND\n");
@@ -239,8 +244,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
             plan = NULL;
             planlength = 0;
             t_startplan = std::chrono::high_resolution_clock::now();
+            planner.updateMap(maplayer);
             planner.replan(&plan, &planlength, arm_current);
-            printf("replanned\n");
             t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
