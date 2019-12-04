@@ -3,7 +3,7 @@
 
 class DRRT: public SamplingPlanners{
     public:
-        DRRT(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs,double epsilon,int sampling_rate,double bias_probability);
+        DRRT(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs,double epsilon,int sampling_rate,double bias_probability,int max_iterations);
         void getFirstPlan(double ***plan,int *planlength);
         double returnPathCost();
         void replan(double ***plan,int *planlength,const std::vector<double>& current_angle);
@@ -13,6 +13,7 @@ class DRRT: public SamplingPlanners{
         int num_samples_;
         double total_cost_;
         double bias_probability_;
+        int max_iterations_;
         std::uniform_int_distribution<int> distribution_goal_selection_;
         std::mt19937 bias_generator_;
         std::unordered_map<std::vector<double>,std::vector<double>,container_hash<std::vector<double> > > tree_;

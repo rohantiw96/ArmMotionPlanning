@@ -1,12 +1,13 @@
 #include "DRRT.h"
 
-DRRT::DRRT(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs,double epsilon,int num_samples,double bias_probability)
+DRRT::DRRT(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs,double epsilon,int num_samples,double bias_probability,int max_iterations)
     :SamplingPlanners(map,x_size,y_size,arm_start,arm_goal,numofDOFs){
         epsilon_ = epsilon;
         num_samples_ = num_samples;
         bias_generator_ = std::mt19937(std::random_device()());
         distribution_goal_selection_ = std::uniform_int_distribution<int>(1, 100);
         bias_probability_ = bias_probability;
+        max_iterations_ = max_iterations;
 }
 
 std::vector<double> DRRT::findNearestNeighbor(const std::vector<double> &q_rand){
@@ -132,7 +133,7 @@ void DRRT::deleteAllChildNodes(const std::vector<double>& parent){
 }
 
 void DRRT::invalidateNodes(){
-    printf("Size of Tree %d\n",tree_.size());
+    printf("Size of Tree %ld\n",tree_.size());
     for(const auto& n:tree_){
         // if(!IsValidArmConfiguration(tree_[n],true))
         //     invalid_nodes_[tree_[n]] = true;
@@ -161,6 +162,7 @@ void DRRT::getFirstPlan(double*** plan,int* planlength){
     std::vector<double> collision_free_configeration;
     std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
     bool reachedGoal = false;
+    int count = 0;
     if (!checkGoalAndStartForCollision()){
         tree_[arm_goal_] = std::vector<double>{};
         while(!reachedGoal){ 
@@ -175,6 +177,11 @@ void DRRT::getFirstPlan(double*** plan,int* planlength){
                     reachedGoal = true;
                 }
             }
+            if(count > max_iterations_){
+                printf("No Path Found During First Plan, Max iterations exceeded\n");
+                break;
+            }
+            count++;
         }
     }
     if(reachedGoal) {
@@ -184,7 +191,6 @@ void DRRT::getFirstPlan(double*** plan,int* planlength){
         printf("Total Cost %f\n",total_cost_);
     }
     else{
-        printf("No Path Found, Max iterations exceeded\n");
         total_cost_ = 0;
     }
     returnPathToMex(path,plan,planlength);
@@ -198,8 +204,7 @@ bool DRRT::regrowTree(const std::vector<double> current_angle){
     std::vector<double> q_epilison;
     std::vector<double> collision_free_configeration;
     arm_start_ = current_angle;
-    printf("Tree Size %d\n",tree_.size());
-    int max_iterations = 5000;
+    printf("Tree Size %ld\n",tree_.size());
     int count = 0;
     if (!checkGoalAndStartForCollision()){
         while(!reachedCurrentState){
@@ -215,11 +220,10 @@ bool DRRT::regrowTree(const std::vector<double> current_angle){
                     reachedCurrentState = true;
                 }
             }
-            if(count > max_iterations){
+            if(count > max_iterations_){
                 printf("No Path Found During Replanning, Max iterations exceeded\n");
                 return false;
             }
-            printf("%d\n",count);
             count++;
         }
         return true;
