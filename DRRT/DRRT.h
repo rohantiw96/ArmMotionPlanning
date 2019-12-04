@@ -29,5 +29,5 @@ class DRRT: public SamplingPlanners{
         void trimNodes();
         void deleteAllChildNodes(const std::vector<double>& parent);
         void deleteEdge(const std::vector<double>& parent,const std::vector<double> child);
-        void regrowTree(const std::vector<double> current_angle);
+        bool regrowTree(const std::vector<double> current_angle);
 };

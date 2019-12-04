@@ -190,11 +190,17 @@ void mexFunction( int nlhs, mxArray *plhs[],
     LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
 
     //params for DRRT
-    double epsilon = 0.6;
+    double epsilon = 0.5;
     double interpolation_sampling = 50;
+<<<<<<< HEAD
+    double goal_bias_probability = 0.1;
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability);
+=======
     double goal_bias_probability = 0.2;
     // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability);
+>>>>>>> 2a05ffb7cb4d1c8e34e65c27699f3c8402c3b46d
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
     planner.getFirstPlan(&plan, &planlength);
     std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
