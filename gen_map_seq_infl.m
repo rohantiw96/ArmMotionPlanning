@@ -23,11 +23,6 @@ for idx=1:length(actionvec)
     end
     
     % plot
-    curr_pos(2)
-    obstacle_end_y
-    curr_pos(1)
-    obstacle_end_x
-    idx
     envmap(curr_pos(2):obstacle_end_y, curr_pos(1):obstacle_end_x, idx) = 1;
     envmap(rollover_start(2):rollover_y_end, rollover_start(1):rollover_x_end, idx) = 1;
     

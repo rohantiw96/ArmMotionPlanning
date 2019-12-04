@@ -90,8 +90,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     /* Check for proper number of arguments */    
     if (nrhs != 5) { 
 	    mexErrMsgIdAndTxt( "MATLAB:planner:invalidNumInputs",
-                "Four input arguments required."); 
-    } else if (nlhs != 6) {
+                "Five input arguments required."); 
+    } else if (nlhs != 5) {
 	    mexErrMsgIdAndTxt( "MATLAB:planner:maxlhs",
                 "One output argument required."); 
     } 
