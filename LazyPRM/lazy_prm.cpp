@@ -163,10 +163,10 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
             start_neighbor = findNearestNeighbor(arm_start_);
 
         goal_neighbor = findNearestNeighbor(arm_goal_);
-        printf("start node\n");
-        printAngles(start_neighbor);
-        printf("goal node\n");
-        printAngles(goal_neighbor);
+        // printf("start node\n");
+        // printAngles(start_neighbor);
+        // printf("goal node\n");
+        // printAngles(goal_neighbor);
         came_from_.clear();
         final_path.clear();
         if (comp_map.find(goal_neighbor)==comp_map.end() || comp_map.find(start_neighbor)==comp_map.end())
