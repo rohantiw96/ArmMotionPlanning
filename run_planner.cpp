@@ -41,7 +41,6 @@
 //the length of each link in the arm (should be the same as the one used in runtest.m)
 #define LINKLENGTH_CELLS 10
 
-
 bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm_current, double maxjntspeed, const double* next_plan, int numofDOFs)
 {
     double scale_factor = 1;
@@ -140,7 +139,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int arm_traj_length = 1;
 
     //Tunable parameters
-    int lookahead = 3;
+    int lookahead = 10;
     double maxjntspeed = 0.5;
     
     //you can may be call the corresponding planner function here
@@ -182,12 +181,12 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
 
     //params for DRRT
-    double epsilon = 1;
+    double epsilon = 0.6;
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.2;
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability);
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-    // planner->getFirstPlan(&plan, &planlength);
     planner.getFirstPlan(&plan, &planlength);
     std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
@@ -236,6 +235,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
             // Check if arm_current is in collision
             
+            plan = NULL;
+            planlength = 0;
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.replan(&plan, &planlength, arm_current);
             printf("replanned\n");
@@ -261,7 +262,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         else{
             printf("MOVING ARM\n");
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
-            printf("next arm incremented\n");
+            printf("INCREMENT ARM DONE\n");
             arm_current = arm_next;
             printf("current arm updated\n");
             //insert into arm_traj
@@ -324,5 +325,4 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double* planvertices_out = (double*) mxGetPr(NUMVERTICES_OUT);
     *planvertices_out = num_vertices;
     return;
-    
 }

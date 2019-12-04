@@ -88,10 +88,10 @@ std::vector<std::vector<double> > DRRT::getPath(const std::vector<double>& start
     std::vector<std::vector<double> > path;
     std::vector<double> q_current = start_angles;
     while(tree_[q_current] != goal_angles){
-        printf("Angles: ");
-        for(const auto& n:q_current){
-            printf("%f ",n);
-        }
+        // printf("Angles: ");
+        // for(const auto& n:q_current){
+        //     printf("%f ",n);
+        // }
         path.push_back(q_current);
         q_current = tree_[q_current];
     }
@@ -132,14 +132,17 @@ void DRRT::deleteAllChildNodes(const std::vector<double>& parent){
 }
 
 void DRRT::invalidateNodes(){
+    printf("Size of Tree %d\n",tree_.size());
     for(const auto& n:tree_){
         // if(!IsValidArmConfiguration(tree_[n],true))
         //     invalid_nodes_[tree_[n]] = true;
+        // printf("Loop through Nodes\n");
+        // printf("Child Size %d and Parent Size %d\n",n.first.size(),n.second.size());
         if (!IsValidArmConfiguration(n.first,true))
         {
             invalid_nodes_[n.first] = true;
         }
-        else if (!interpolate(tree_[n.first],n.first)){
+        else if (n.first != arm_goal_ && !interpolate(n.second,n.first)){
             invalid_nodes_[n.first] = true;
         }
     }
@@ -174,12 +177,11 @@ void DRRT::getFirstPlan(double*** plan,int* planlength){
             }
         }
     }
-    printf("Here");
     if(reachedGoal) {
-        printf("BackTracking");
+        printf("BackTracking\n");
         path = getPath(arm_start_,arm_goal_);
         total_cost_ = getPathCost(path);
-        printf("Total Cost %f",total_cost_);
+        printf("Total Cost %f\n",total_cost_);
     }
     else{
         total_cost_ = 0;
@@ -194,18 +196,26 @@ void DRRT::regrowTree(const std::vector<double> current_angle){
     std::vector<double> q_near;
     std::vector<double> q_epilison;
     std::vector<double> collision_free_configeration;
-    while(!reachedCurrentState){
-        q_rand = biasedAngleSampling(bias_probability_,current_angle);
-        q_near = findNearestNeighbor(q_rand);
-        q_epilison = extend(q_near,q_rand);
-        collision_free_configeration = interpolateBetweenNodes(q_near,q_epilison);
-        if (collision_free_configeration != q_near){
-            addNode(q_near,collision_free_configeration);
-            if(collision_free_configeration == current_angle){
-                printf("Found A Path\n");
-                reachedCurrentState = true;
+    arm_start_ = current_angle;
+    printf("Tree Size %d\n",tree_.size());
+    if (!checkGoalAndStartForCollision()){
+        while(!reachedCurrentState){
+            q_rand = biasedAngleSampling(bias_probability_,current_angle);
+            q_near = findNearestNeighbor(q_rand);
+            q_epilison = extend(q_near,q_rand);
+            collision_free_configeration = interpolateBetweenNodes(q_near,q_epilison);
+            if (collision_free_configeration != q_near){
+                // printf("Adding Node\n");
+                addNode(q_near,collision_free_configeration);
+                if(collision_free_configeration == current_angle){
+                    printf("Found A Path\n");
+                    reachedCurrentState = true;
+                }
             }
         }
+    }
+    else{
+        printf("Current Position in Collision\n");
     } 
 }
 void DRRT::replan(double ***plan,int *planlength,const std::vector<double>& current_angle){

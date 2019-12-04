@@ -1,2 +1,3 @@
 *.m~
-
+*.mexa64
+*.mexmaci64
