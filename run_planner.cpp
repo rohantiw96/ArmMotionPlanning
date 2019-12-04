@@ -232,7 +232,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 printf("COLLISION FOUND\n");
                 break;
             }
-            if(plan_step_reached){
+            if(plan_step_reached && (future_plan_step < planlength)){
                 future_plan_step++;
             }
             arm_next = arm_future;
