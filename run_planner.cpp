@@ -233,6 +233,9 @@ void mexFunction( int nlhs, mxArray *plhs[],
         printf("not in collision: %d\n", notcollision);
         if(!notcollision){
             printf("REPLANNING\n");
+
+            // Check if arm_current is in collision
+            
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.replan(&plan, &planlength, arm_current);
             printf("replanned\n");
