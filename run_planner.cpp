@@ -149,10 +149,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
     int max_iterations = 50000;
-    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+    // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
 
     // LAZY PRM
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     
     
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
