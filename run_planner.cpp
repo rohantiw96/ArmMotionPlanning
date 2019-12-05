@@ -137,6 +137,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //Tunable parameters
     int lookahead = 5;
     double maxjntspeed = 0.3;
+    int backtrack_steps = 3;
     
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();    
     double* maplayer = &map[2500];
@@ -212,6 +213,19 @@ void mexFunction( int nlhs, mxArray *plhs[],
             }
 
             printf("REPLANNING\n");
+
+            //Backtrack first:
+            for(int b=0; b < backtrack_steps; b++){
+                printf("BACKTRACK\n");
+                bool previous_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step-1], numofDOFs);
+                if(previous_plan_reached){
+                    next_plan_step--;
+                }
+                arm_current = arm_next;
+                traj_vector.push_back(arm_current);
+                t++;
+            }
+
             plan.clear();
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.updateMap(maplayer);
