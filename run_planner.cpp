@@ -215,11 +215,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
             //Backtrack first:
             for(int b=0; b < backtrack_steps; b++){
                 printf("BACKTRACK\n");
-                bool previous_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step-1], numofDOFs);
-                if(previous_plan_reached){
-                    next_plan_step--;
+                if (arm_current == arm_start){
+                    arm_current = arm_current;
+                } else{
+                    arm_current = traj_vector[t-1-b];
                 }
-                arm_current = arm_next;
                 traj_vector.push_back(arm_current);
                 t++;
             }
