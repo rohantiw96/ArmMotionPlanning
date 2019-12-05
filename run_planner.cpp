@@ -186,36 +186,38 @@ void mexFunction( int nlhs, mxArray *plhs[],
         // Check for collisions in the future of trajectory
         notcollision = true;
         future_plan_step = next_plan_step;
-        for(int t_future = 0; t_future < lookahead; t_future++){
-            bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-            printf("arm next is\n");
-            planner.printAngles(arm_next);
-            printf("arm future is\n");
-            planner.printAngles(arm_future);
-            notcollision = planner.interpolate(arm_future, arm_next); 
-            printf("look ahead\n");
-            printf("result of not collision %d\n",notcollision);
-            if(!notcollision){
-                printf("COLLISION FOUND\n");
-                break;
+        if(plan.size() == 0){
+            notcollision = planner.IsValidArmConfiguration(arm_current, true);
+        }
+        else {
+            for(int t_future = 0; t_future < lookahead; t_future++){
+                bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
+                printf("arm next is\n");
+                planner.printAngles(arm_next);
+                printf("arm future is\n");
+                planner.printAngles(arm_future);
+                notcollision = planner.interpolate(arm_future, arm_next); 
+                printf("look ahead\n");
+                printf("result of not collision %d\n",notcollision);
+                if(!notcollision){
+                    printf("COLLISION FOUND\n");
+                    break;
+                }
+                if(plan_step_reached && future_plan_step < plan.size()-1){
+                    future_plan_step++;
+                }
+                else if (plan_step_reached && future_plan_step >= plan.size()-1)
+                // if(future_plan_step == plan.size()-1)
+                {
+                    printf("broke out of look ahead\n");
+                    break;
+                }            
+                arm_next = arm_future;
             }
-            if(plan_step_reached && future_plan_step < plan.size()-1){
-                future_plan_step++;
-            }
-            else if (plan_step_reached && future_plan_step >= plan.size()-1)
-            // if(future_plan_step == plan.size()-1)
-            {
-                printf("broke out of look ahead\n");
-                break;
-            }            
-            arm_next = arm_future;
         }
 
-        //Increment if no collision
-        if(!notcollision || plan.size()==0){
-            // Check if arm_current is in collision
-
-            //Backtrack first:
+        //Backtrack if any future is in collision:
+        if(!notcollision){
             int backtrack_idx = traj_vector.size()-2;
             for(int b=0; b < backtrack_steps; b++){
                 printf("BACKTRACK\n");
@@ -228,7 +230,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 traj_vector.push_back(arm_current);
                 t++;
             }
-            
+        }
+
+        //Increment if no collision
+        if(!notcollision || plan.size()==0){
             printf("REPLANNING\n");
         
             //update map
