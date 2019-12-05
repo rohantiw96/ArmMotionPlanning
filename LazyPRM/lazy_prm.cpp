@@ -19,7 +19,7 @@ struct CompareNode
 
 LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs)
     :SamplingPlanners(map,x_size,y_size,arm_start,arm_goal,numofDOFs){
-        epsilon_ = 1;
+        epsilon_ = 0.8;
         num_iteration_ = 100000;
         found_initial_path_ = false;
 }
