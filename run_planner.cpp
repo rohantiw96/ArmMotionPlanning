@@ -136,14 +136,13 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //Tunable parameters
     int lookahead = 5;
     double maxjntspeed = 0.3;
-    int backtrack_steps = 3;
+    int backtrack_steps = 0;
     
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();    
     double* maplayer = &map[2500];
     double* maplayer_inflated = &map_inflated[2500];
     printf("map xdim: %d, ydim: %d, tdim: %d\n", x_size, y_size, t_size);
-
-    SamplingPlanners planner_inflated(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    SamplingPlanners run_planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
 
     //params for DRRT
     double epsilon = 0.5;
@@ -153,7 +152,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
 
     // LAZY PRM
-    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    LAZYPRM planner(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
     
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
     planner.getFirstPlan(plan);
@@ -170,14 +169,25 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int next_plan_step = 1;
 
     for(int t=0; t < t_size; t++){
-        printf("timestep: %d\n", t);
         int layer_index = layersize * t;
         maplayer = &map[layer_index];
         maplayer_inflated = &map_inflated[layer_index];
-        planner_inflated.updateMap(maplayer_inflated);
+        run_planner.updateMap(maplayer);
 
-        if(plan.size()==0 && planner_inflated.IsValidArmConfiguration(arm_current,true)){
-            break;
+        if(plan.size()==0)
+        {
+            if(!run_planner.IsValidArmConfiguration(arm_current,true))
+            {
+                printf("in collision with obstacle. EXITING");
+                break;
+            }
+            else
+            {
+                printf("NOT MOVING\n");
+                traj_vector.push_back(arm_current);
+                continue;
+            }
+            
         }
 
         // Check for collisions in the future of trajectory
@@ -185,7 +195,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         int future_plan_step = next_plan_step;
         for(int t_future = 0; t_future < lookahead; t_future++){
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-            notcollision = planner_inflated.interpolate(arm_future, arm_next); 
+            notcollision = run_planner.interpolate(arm_future, arm_next); 
 
             if(!notcollision){
                 printf("COLLISION FOUND\n");
@@ -202,15 +212,13 @@ void mexFunction( int nlhs, mxArray *plhs[],
         }
 
         //Increment if no collision
-        printf("not in collision: %d\n", notcollision);
         if(!notcollision){
             // Check if arm_current is in collision
-            if(!planner_inflated.IsValidArmConfiguration(arm_current, true)){
-                printf("ARM IS IN COLLISION WITH INFLATED MAP");
+            if(!run_planner.IsValidArmConfiguration(arm_current, true)){
+                printf("ARM IS IN COLLISION WITH MAP");
                 break;
             }
 
-            printf("REPLANNING\n");
 
             //Backtrack first:
             for(int b=0; b < backtrack_steps; b++){
@@ -223,10 +231,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 traj_vector.push_back(arm_current);
                 t++;
             }
-
+            
+            printf("REPLANNING\n");
             plan.clear();
             t_startplan = std::chrono::high_resolution_clock::now();
-            planner.updateMap(maplayer);
+            planner.updateMap(maplayer_inflated);
             planner.replan(plan, arm_current);
             printf("Total length %ld\n",plan.size());
             t_endplan = std::chrono::high_resolution_clock::now();
@@ -248,7 +257,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
         else{
             printf("MOVING ARM\n");
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
-            printf("INCREMENT ARM DONE\n");
             arm_current = arm_next;
 
             //insert into arm_traj
