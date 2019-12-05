@@ -5,9 +5,9 @@ class DRRT: public SamplingPlanners{
     public:
         DRRT(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs,double epsilon,int sampling_rate,double bias_probability,int max_iterations);
         void getFirstPlan(std::vector<std::vector<double>> &plan);
-        double returnPathCost();
         void replan(std::vector<std::vector<double>> &plan,const std::vector<double>& current_angle);
         int returnNumberOfVertices();
+        double returnPathCost();
     protected:
         double epsilon_;
         int num_samples_;
@@ -24,7 +24,7 @@ class DRRT: public SamplingPlanners{
         void addNode(const std::vector<double> parent,const std::vector<double> child);
         bool inGoalRegion(const std::vector<double> &angles);
         std::vector<std::vector<double> > getPath(const std::vector<double>& start_angles,const std::vector<double>& goal_angles);
-        std::vector<double> biasedAngleSampling(const double goal_bias_probability,const std::vector<double>& node);
+        std::vector<double> biasedAngleSampling(double goal_bias_probability,const std::vector<double>& node);
         std::vector<double> interpolateBetweenNodes(const std::vector<double>& start,const std::vector<double>& end);
         void invalidateNodes();
         void trimNodes();

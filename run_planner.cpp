@@ -148,15 +148,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double epsilon = 0.5;
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
-    int max_iterations = 50000;
+    int max_iterations = 10000;
     DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
 
     // LAZY PRM
-<<<<<<< HEAD
     // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-=======
-    LAZYPRM planner(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
->>>>>>> e0dbdc408f1dcde46d3af48909bbe8e1aeb87bbf
     
 
     //get first plan
@@ -186,15 +182,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         //update map
         maplayer = &map[layer_index];
         maplayer_inflated = &map_inflated[layer_index];
-<<<<<<< HEAD
-        planner_inflated.updateMap(maplayer_inflated);
-
-        if(plan.size()==0 && !planner_inflated.IsValidArmConfiguration(arm_current,true)){
-            break;
-        }
-=======
         run_planner.updateMap(maplayer);
->>>>>>> e0dbdc408f1dcde46d3af48909bbe8e1aeb87bbf
 
         // Check for collisions in the future of trajectory
         notcollision = true;
