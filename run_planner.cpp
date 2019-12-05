@@ -147,11 +147,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double epsilon = 0.5;
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
-    int max_iterations = 50000;
-    // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+    int max_iterations = 10000;
+    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
 
     // LAZY PRM
-    LAZYPRM planner(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     
 
     //get first plan
