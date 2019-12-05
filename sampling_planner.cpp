@@ -263,7 +263,7 @@ double SamplingPlanners::getPathCost(const std::vector<std::vector<double>>& pat
 }
 
 bool SamplingPlanners::checkGoalAndStartForCollision(){
-  if (!IsValidArmConfiguration(arm_goal_,false))
+  if (!IsValidArmConfiguration(arm_goal_,true))
     {
       printf("goal point is in collision\n");
       return true;
