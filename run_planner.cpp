@@ -119,6 +119,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     std::vector<double> arm_start(armstart_anglesV_rad, armstart_anglesV_rad + numofDOFs);
     std::vector<double> arm_goal(armgoal_anglesV_rad, armgoal_anglesV_rad + numofDOFs);
     
+
     //get the planner id
     int planner_id = (int)*mxGetPr(PLANNER_ID_IN);
     if(planner_id < 0 || planner_id > 3){
@@ -126,23 +127,22 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 "planner id should be between 0 and 3 inclusive");         
     }
     
-    //plan variables assignment
-    std::vector<std::vector<double>> plan{};
-
     //keep track of arm trajectory
     //TODO: implement this and return to matlab instead of plan
     std::vector<std::vector<double>> traj_vector{arm_start};
     
-    //Tunable parameters
-    int lookahead = 5;
-    double maxjntspeed = 0.3;
-    int backtrack_steps = 0;
     
+    //map
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();    
     double* maplayer = &map[2500];
     double* maplayer_inflated = &map_inflated[2500];
     printf("map xdim: %d, ydim: %d, tdim: %d\n", x_size, y_size, t_size);
     SamplingPlanners run_planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    
+    //Tunable parameters for run planner
+    int lookahead = 5;
+    double maxjntspeed = 0.3;
+    int backtrack_steps = 0;
 
     //params for DRRT
     double epsilon = 0.5;
@@ -154,7 +154,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
     // LAZY PRM
     LAZYPRM planner(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
     
+
+    //get first plan
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
+    std::vector<std::vector<double>> plan{};
     planner.getFirstPlan(plan);
     std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
@@ -168,37 +171,28 @@ void mexFunction( int nlhs, mxArray *plhs[],
     std::vector<double> arm_future = arm_next;
     int next_plan_step = 1;
 
+    //run plan variables
+    int layer_index;
+    bool notcollision;
+    int future_plan_step;
+    //loop through all time steps
     for(int t=0; t < t_size; t++){
-        int layer_index = layersize * t;
+        layer_index = layersize * t;
+        
+        //update map
         maplayer = &map[layer_index];
         maplayer_inflated = &map_inflated[layer_index];
         run_planner.updateMap(maplayer);
 
-        if(plan.size()==0)
-        {
-            if(!run_planner.IsValidArmConfiguration(arm_current,true))
-            {
-                printf("in collision with obstacle. EXITING");
-                break;
-            }
-            else
-            {
-                printf("NOT MOVING\n");
-                traj_vector.push_back(arm_current);
-                continue;
-            }
-            
-        }
-
         // Check for collisions in the future of trajectory
-        bool notcollision = true;
-        int future_plan_step = next_plan_step;
+        notcollision = true;
+        future_plan_step = next_plan_step;
         for(int t_future = 0; t_future < lookahead; t_future++){
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
             notcollision = run_planner.interpolate(arm_future, arm_next); 
 
             if(!notcollision){
-                printf("COLLISION FOUND\n");
+                printf("COLLISION FOUND");
                 break;
             }
             if(plan_step_reached && future_plan_step < plan.size()-1){
@@ -212,7 +206,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         }
 
         //Increment if no collision
-        if(!notcollision){
+        if(!notcollision || plan.size()==0){
             // Check if arm_current is in collision
             if(!run_planner.IsValidArmConfiguration(arm_current, true)){
                 printf("ARM IS IN COLLISION WITH MAP");
