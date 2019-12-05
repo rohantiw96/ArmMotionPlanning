@@ -46,14 +46,15 @@ bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm
 {
     double scale_factor = 1.;
     for(int idx=0; idx < numofDOFs; idx++){
-        double delta = next_plan[idx] - arm_current[idx];
-        if(abs(delta) > maxjntspeed){
+        double delta = abs(next_plan[idx] - arm_current[idx]);
+        if(delta > maxjntspeed){
             double new_factor = maxjntspeed / delta;
             if(new_factor < scale_factor){
                 scale_factor = new_factor;
             }
         }
     }
+    printf("scale factor %f\n",scale_factor);
     for(int idx=0; idx < numofDOFs; idx++){
         arm_next[idx] = arm_current[idx] + (next_plan[idx] - arm_current[idx])*scale_factor;
     }
@@ -135,7 +136,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     
     //Tunable parameters
     int lookahead = 5;
-    double maxjntspeed = 50;
+    double maxjntspeed = 0.3;
     
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();    
     double* maplayer = &map[2500];
@@ -149,10 +150,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
     int max_iterations = 50000;
-    // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
 
     // LAZY PRM
-    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
     planner.getFirstPlan(plan);
