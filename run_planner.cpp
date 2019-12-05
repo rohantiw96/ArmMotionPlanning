@@ -54,7 +54,6 @@ bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm
             }
         }
     }
-    printf("scale factor %f\n",scale_factor);
     for(int idx=0; idx < numofDOFs; idx++){
         arm_next[idx] = arm_current[idx] + (next_plan[idx] - arm_current[idx])*scale_factor;
     }
@@ -147,14 +146,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
     SamplingPlanners planner_inflated(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
 
     //params for DRRT
-    double epsilon = 0.8;
+    double epsilon = 0.5;
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
     int max_iterations = 50000;
-    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+    // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
 
     // LAZY PRM
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
     planner.getFirstPlan(plan);
@@ -177,7 +176,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         maplayer_inflated = &map_inflated[layer_index];
         planner_inflated.updateMap(maplayer_inflated);
 
-        if(plan.size()==0){
+        if(plan.size()==0 && planner_inflated.IsValidArmConfiguration(arm_current,true)){
             break;
         }
 
@@ -185,7 +184,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
         bool notcollision = true;
         int future_plan_step = next_plan_step;
         for(int t_future = 0; t_future < lookahead; t_future++){
-            printf("LOOK AHEAD\n");
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
             notcollision = planner_inflated.interpolate(arm_future, arm_next); 
 
@@ -207,7 +205,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         printf("not in collision: %d\n", notcollision);
         if(!notcollision){
             // Check if arm_current is in collision
-            if(!planner_inflated.IsValidArmConfiguraction(arm_current, true)){
+            if(!planner_inflated.IsValidArmConfiguration(arm_current, true)){
                 printf("ARM IS IN COLLISION WITH INFLATED MAP");
                 break;
             }
@@ -252,7 +250,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
             bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
             printf("INCREMENT ARM DONE\n");
             arm_current = arm_next;
-            printf("current arm updated\n");
 
             //insert into arm_traj
             traj_vector.push_back(arm_current);

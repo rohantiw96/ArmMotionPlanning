@@ -44,6 +44,8 @@ public:
 
     bool interpolate(const std::vector<double> &start,const std::vector<double> &end);
     void updateMap(double *map);
+    int IsValidArmConfiguration(std::vector<double> angles,bool checkCollision);
+
 
 protected:
     double *map_;
@@ -64,7 +66,6 @@ protected:
     void get_current_point(bresenham_param_t *params, int *x, int *y);
     int get_next_point(bresenham_param_t *params);
     int IsValidLineSegment(const double x0, const double y0, const double x1, const double y1,bool checkCollision);
-    int IsValidArmConfiguration(std::vector<double> angles,bool checkCollision);
     int getMapIndex(const int x, const int y);
     double euclideanDistance(const std::vector<double> &q_1,const std::vector<double> &q_2);
     double getNorm(const std::vector<double>& vec);
