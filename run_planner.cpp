@@ -141,7 +141,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //Tunable parameters for run planner
     int lookahead = 10;
     double maxjntspeed = 0.3;
-    int backtrack_steps = 2;
+    int backtrack_steps = 5;
 
     //params for DRRT
     double epsilon = 0.5;
@@ -216,12 +216,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
             // Check if arm_current is in collision
 
             //Backtrack first:
+            int backtrack_idx = traj_vector.size()-2;
             for(int b=0; b < backtrack_steps; b++){
                 printf("BACKTRACK\n");
                 if (arm_current == arm_start){
                     arm_current = arm_current;
                 } else{
-                    arm_current = traj_vector[t-1-b];
+                    arm_current = traj_vector[backtrack_idx];
+                    backtrack_idx--;
                 }
                 traj_vector.push_back(arm_current);
                 t++;
