@@ -205,10 +205,13 @@ void mexFunction( int nlhs, mxArray *plhs[],
         //Increment if no collision
         printf("not in collision: %d\n", notcollision);
         if(!notcollision){
-            printf("REPLANNING\n");
-
             // Check if arm_current is in collision
-            
+            if(!planner_inflated.IsValidArmConfiguraction(arm_current, true)){
+                printf("ARM IS IN COLLISION WITH INFLATED MAP");
+                break;
+            }
+
+            printf("REPLANNING\n");
             plan.clear();
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.updateMap(maplayer);
