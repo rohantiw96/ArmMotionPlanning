@@ -131,7 +131,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //TODO: implement this and return to matlab instead of plan
     std::vector<std::vector<double>> traj_vector{};
     
-    
     //map
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();    
     double* maplayer = &map[2500];
@@ -184,25 +183,27 @@ void mexFunction( int nlhs, mxArray *plhs[],
         maplayer_inflated = &map_inflated[layer_index];
         run_planner.updateMap(maplayer);
 
-        // Check for collisions in the future of trajectory
-        notcollision = true;
-        future_plan_step = next_plan_step;
-        for(int t_future = 0; t_future < lookahead; t_future++){
-            bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-            notcollision = run_planner.interpolate(arm_future, arm_next); 
+        // Check for collisions in the future of trajectory if plan.size is not 0
+        if(plan.size()!=0){
+            notcollision = true;
+            future_plan_step = next_plan_step;
+            for(int t_future = 0; t_future < lookahead; t_future++){
+                bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
+                notcollision = run_planner.interpolate(arm_future, arm_next); 
 
-            if(!notcollision){
-                printf("COLLISION FOUND\n");
-                break;
+                if(!notcollision){
+                    printf("COLLISION FOUND\n");
+                    break;
+                }
+                if(plan_step_reached && future_plan_step < plan.size()-1){
+                    future_plan_step++;
+                }
+                else
+                {
+                    break;
+                }            
+                arm_next = arm_future;
             }
-            if(plan_step_reached && future_plan_step < plan.size()-1){
-                future_plan_step++;
-            }
-            else
-            {
-                break;
-            }            
-            arm_next = arm_future;
         }
 
         //Increment if no collision
@@ -212,7 +213,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 printf("ARM IS IN COLLISION WITH MAP");
                 break;
             }
-
 
             //Backtrack first:
             for(int b=0; b < backtrack_steps; b++){
@@ -263,6 +263,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 next_plan_step++;
             }
         }
+
+
         if (arm_goal == arm_current)
         {
             printf("reached GOAL !!!!!!!!!!\n");
