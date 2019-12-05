@@ -155,12 +155,11 @@ void DRRT::trimNodes(){
         deleteAllChildNodes(node.first);
     }
 }
-void DRRT::getFirstPlan(double*** plan,int* planlength){
+void DRRT::getFirstPlan(std::vector<std::vector<double>> &plan){
     std::vector<double> q_rand;
     std::vector<double> q_near;
     std::vector<double> q_epilison;
     std::vector<double> collision_free_configeration;
-    std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
     bool reachedGoal = false;
     int count = 0;
     if (!checkGoalAndStartForCollision()){
@@ -186,15 +185,13 @@ void DRRT::getFirstPlan(double*** plan,int* planlength){
     }
     if(reachedGoal) {
         printf("BackTracking\n");
-        path = getPath(arm_start_,arm_goal_);
-        total_cost_ = getPathCost(path);
-        printf("Total Cost %f\n",total_cost_);
+        plan = getPath(arm_start_,arm_goal_);
+        total_cost_ = getPathCost(plan);
+        // printf("Total Cost %f\n",total_cost_);
     }
     else{
         total_cost_ = 0;
     }
-    returnPathToMex(path,plan,planlength);
-    return;
 }
 
 bool DRRT::regrowTree(const std::vector<double> current_angle){
@@ -233,8 +230,7 @@ bool DRRT::regrowTree(const std::vector<double> current_angle){
         return false;
     } 
 }
-void DRRT::replan(double ***plan,int *planlength,const std::vector<double>& current_angle){
-    std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
+void DRRT::replan(std::vector<std::vector<double>> &plan,const std::vector<double>& current_angle){
     printf("REPLANNING DRRT\n");
     invalidateNodes();
     printf("Invalidated Nodes\n");
@@ -242,7 +238,6 @@ void DRRT::replan(double ***plan,int *planlength,const std::vector<double>& curr
     printf("Trimed Nodes\n");
     if(regrowTree(current_angle)){
         printf("Regrown Tree\n");
-        path = getPath(current_angle,arm_goal_);
+        plan = getPath(current_angle,arm_goal_);
     }
-    returnPathToMex(path,plan,planlength);
 }

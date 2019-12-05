@@ -42,20 +42,21 @@
 //the length of each link in the arm (should be the same as the one used in runtest.m)
 #define LINKLENGTH_CELLS 10
 
-bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm_current, double maxjntspeed, const double* next_plan, int numofDOFs)
+bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm_current, double maxjntspeed, std::vector<double> &next_plan, int numofDOFs)
 {
-    double scale_factor = 1;
+    double scale_factor = 1.;
     for(int idx=0; idx < numofDOFs; idx++){
-        arm_next[idx] = next_plan[idx] - arm_current[idx];
-        if(abs(arm_next[idx]) > maxjntspeed){
-            double new_factor = maxjntspeed / arm_next[idx];
+        double delta = abs(next_plan[idx] - arm_current[idx]);
+        if(delta > maxjntspeed){
+            double new_factor = maxjntspeed / delta;
             if(new_factor < scale_factor){
                 scale_factor = new_factor;
             }
         }
     }
+    printf("scale factor %f\n",scale_factor);
     for(int idx=0; idx < numofDOFs; idx++){
-        arm_next[idx] = arm_current[idx] + arm_next[idx]*scale_factor;
+        arm_next[idx] = arm_current[idx] + (next_plan[idx] - arm_current[idx])*scale_factor;
     }
 
     if(scale_factor == 1){
@@ -118,6 +119,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double* armgoal_anglesV_rad = mxGetPr(ARMGOAL_IN);
     std::vector<double> arm_start(armstart_anglesV_rad, armstart_anglesV_rad + numofDOFs);
     std::vector<double> arm_goal(armgoal_anglesV_rad, armgoal_anglesV_rad + numofDOFs);
+    
     //get the planner id
     int planner_id = (int)*mxGetPr(PLANNER_ID_IN);
     if(planner_id < 0 || planner_id > 3){
@@ -125,83 +127,40 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 "planner id should be between 0 and 3 inclusive");         
     }
     
-    //call the planner
-    double** plan = NULL;
-    int planlength = 0;
+    //plan variables assignment
+    std::vector<std::vector<double>> plan{};
 
     //keep track of arm trajectory
     //TODO: implement this and return to matlab instead of plan
-    double** arm_traj = (double**) malloc(t_size*sizeof(double*));
-
-    //populate arm_traj with arm_start
-    arm_traj[0] = (double*) malloc(numofDOFs*sizeof(double));
-    for(int j = 0; j < numofDOFs; j++){ 
-        arm_traj[0][j] = arm_start[j];
-    }
-    int arm_traj_length = 1;
-
+    std::vector<std::vector<double>> traj_vector{arm_start};
+    
     //Tunable parameters
-    int lookahead = 10;
-    double maxjntspeed = 0.5;
+    int lookahead = 5;
+    double maxjntspeed = 0.3;
     
-    //you can may be call the corresponding planner function here
-    double cost = 0;
-    double num_vertices = 0;
-    int num_iterations = 100000;  
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-
-    printf("0: %f, 2500: %f, 5000: %f\n", map[0], map[2500], map[5000]);
-    
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();    
     double* maplayer = &map[2500];
     double* maplayer_inflated = &map_inflated[2500];
-    printf("0: %f, 2500: %f, 5000: %f\n", maplayer[0], maplayer[2500], maplayer[5000]);
-
     printf("map xdim: %d, ydim: %d, tdim: %d\n", x_size, y_size, t_size);
 
-    // Call Planner Here Exmaple: 
-
-    // SamplingPlanners planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-    // planner.plan(&plan, &planlength);
-    
-    // planner.replan(&plan, &planlength,map,arm_start);
-    // planner.plan(&plan, &planlength);
-    // cost = planner.returnPathCost();
-    // num_vertices = planner.returnNumberOfVertices();
-
-    // LAZYPRM *planner = new LAZYPRM(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
-    // LAZYPRM planner(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
-
-    // SamplingPlanners *planner;
-    // switch(planner_id) {
-    //     case 0:
-    //         LAZYPRM *temp = new LAZYPRM(map, x_size, y_size, arm_start, arm_goal, numofDOFs);
-    //         planner = temp;
-    //         break;
-    // }
-
-    //initialize planner & graph:
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-
-
     SamplingPlanners planner_inflated(map_inflated,x_size,y_size,arm_start,arm_goal,numofDOFs);
-
-
-    //LAZY PRM
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
 
     //params for DRRT
     double epsilon = 0.8;
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
-    int max_iterations = 500000;
-    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    int max_iterations = 50000;
     DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+
+    // LAZY PRM
+    // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
+    
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-    planner.getFirstPlan(&plan, &planlength);
+    planner.getFirstPlan(plan);
     std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
     double t_plan = t_plandiff.count()/1000.0;
-
+    printf("Total length %ld\n",plan.size());
     printf("first plan took %f seconds\n", t_plan);
 
     int layersize = x_size * y_size;
@@ -217,7 +176,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         maplayer_inflated = &map_inflated[layer_index];
         planner_inflated.updateMap(maplayer_inflated);
 
-        if(planlength==0){
+        if(plan.size()==0){
             break;
         }
 
@@ -233,24 +192,31 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 printf("COLLISION FOUND\n");
                 break;
             }
-            if(plan_step_reached && (future_plan_step < planlength)){
+            if(plan_step_reached && future_plan_step < plan.size()-1){
                 future_plan_step++;
             }
+            else
+            {
+                break;
+            }            
             arm_next = arm_future;
         }
 
         //Increment if no collision
         printf("not in collision: %d\n", notcollision);
         if(!notcollision){
-            printf("REPLANNING\n");
-
             // Check if arm_current is in collision
-            
-            plan = NULL;
-            planlength = 0;
+            if(!planner_inflated.IsValidArmConfiguraction(arm_current, true)){
+                printf("ARM IS IN COLLISION WITH INFLATED MAP");
+                break;
+            }
+
+            printf("REPLANNING\n");
+            plan.clear();
             t_startplan = std::chrono::high_resolution_clock::now();
             planner.updateMap(maplayer);
-            planner.replan(&plan, &planlength, arm_current);
+            planner.replan(plan, arm_current);
+            printf("Total length %ld\n",plan.size());
             t_endplan = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
             double t_plan = t_plandiff.count()/1000.0;
@@ -258,14 +224,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
             printf("replanning took %f seconds\n", t_plan);
 
             //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
-            for(int t_wait = t; t_wait < (t+=floor(t_plan)); t_wait++){
-                arm_traj[t_wait] = (double*) malloc(numofDOFs*sizeof(double));
-                for(int j = 0; j < numofDOFs; j++){ 
-                    arm_traj[t_wait][j] = arm_current[j];
-                }
-                arm_traj_length++;
+            for(int t_wait = t; t_wait < (t+=(int) floor(t_plan)); t_wait++){
+                traj_vector.push_back(arm_current);
             }
-            t += floor(t_plan);
+            t += (int) floor(t_plan);
 
             //reset arm_next and next_plan_step:
             arm_next = arm_current;
@@ -277,17 +239,19 @@ void mexFunction( int nlhs, mxArray *plhs[],
             printf("INCREMENT ARM DONE\n");
             arm_current = arm_next;
             printf("current arm updated\n");
+
             //insert into arm_traj
-            arm_traj[t] = (double*) malloc(numofDOFs*sizeof(double));
-            for(int j = 0; j < numofDOFs; j++){ 
-                arm_traj[t][j] = arm_current[j];
-            }
-            arm_traj_length++;
+            traj_vector.push_back(arm_current);
 
             //increment plan step if reached
             if(next_plan_reached){
                 next_plan_step++;
             }
+        }
+        if (arm_goal == arm_current)
+        {
+            printf("reached GOAL !!!!!!!!!!\n");
+            break;
         }
     }
 
@@ -296,21 +260,33 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double time = time_span.count()/1000.0;
 
     printf("Planner Took: %f seconds\n",time);
-    // printf("Planner returned plan of length=%d\n", planlength); 
-    printf("Total Cost %f\n",cost);
-    printf("Number of Vertices %f\n",num_vertices);
+
+    /* Convert arm trajectory to return to mex */
+    double** arm_traj = NULL;
+    int traj_length = traj_vector.size();
+    printf("traj length : %d\n",traj_length);
+    if(traj_length > 0){
+        arm_traj = (double**) malloc(traj_length*sizeof(double*));
+        for (int i = 0; i < traj_length; i++){
+            arm_traj[i] = (double*) malloc(numofDOFs*sizeof(double)); 
+            for(int j = 0; j < numofDOFs; j++){
+                arm_traj[i][j] = traj_vector[i][j];
+            }
+        }
+    }
+
     /* Create return values */
-    if(arm_traj_length > 0)
+    if(traj_length > 0)
     {
-        PLAN_OUT = mxCreateNumericMatrix( (mwSize)arm_traj_length, (mwSize)numofDOFs, mxDOUBLE_CLASS, mxREAL); 
+        PLAN_OUT = mxCreateNumericMatrix( (mwSize)traj_length, (mwSize)numofDOFs, mxDOUBLE_CLASS, mxREAL); 
         double* plan_out = mxGetPr(PLAN_OUT);        
         //copy the values
         int i,j;
-        for(i = 0; i < arm_traj_length; i++)
+        for(i = 0; i < traj_length; i++)
         {
             for (j = 0; j < numofDOFs; j++)
             {
-                plan_out[j*arm_traj_length + i] = arm_traj[i][j];
+                plan_out[j*traj_length + i] = arm_traj[i][j];
             }
         }
     }
@@ -325,12 +301,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 plan_out[j] = armstart_anglesV_rad[j];
         }     
     }
+    int num_vertices = 0;
+    double cost = 0;
     PLANLENGTH_OUT = mxCreateNumericMatrix( (mwSize)1, (mwSize)1, mxINT8_CLASS, mxREAL);
     PATHTIME_OUT = mxCreateNumericMatrix( (mwSize)1, (mwSize)1, mxDOUBLE_CLASS, mxREAL); 
     PATHCOST_OUT = mxCreateNumericMatrix( (mwSize)1, (mwSize)1, mxDOUBLE_CLASS, mxREAL);
     NUMVERTICES_OUT = mxCreateNumericMatrix( (mwSize)1, (mwSize)1, mxDOUBLE_CLASS, mxREAL); 
     int* planlength_out = (int*) mxGetPr(PLANLENGTH_OUT);
-    *planlength_out = arm_traj_length;
+    *planlength_out = traj_length;
     double* plantime_out = (double*) mxGetPr(PATHTIME_OUT);
     *plantime_out = time;
     double* plancost_out = (double*) mxGetPr(PATHCOST_OUT);
