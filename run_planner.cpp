@@ -129,7 +129,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     
     //keep track of arm trajectory
     //TODO: implement this and return to matlab instead of plan
-    std::vector<std::vector<double>> traj_vector{arm_start};
+    std::vector<std::vector<double>> traj_vector{};
     
     
     //map
@@ -157,7 +157,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     //get first plan
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
-    std::vector<std::vector<double>> plan{};
+    std::vector<std::vector<double>> plan{arm_start};
     planner.getFirstPlan(plan);
     std::chrono::high_resolution_clock::time_point t_endplan = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
@@ -176,7 +176,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     bool notcollision;
     int future_plan_step;
     //loop through all time steps
-    for(int t=0; t < t_size; t++){
+    for(int t=1; t < t_size; t++){
         layer_index = layersize * t;
         
         //update map
@@ -192,7 +192,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
             notcollision = run_planner.interpolate(arm_future, arm_next); 
 
             if(!notcollision){
-                printf("COLLISION FOUND");
+                printf("COLLISION FOUND\n");
                 break;
             }
             if(plan_step_reached && future_plan_step < plan.size()-1){
@@ -239,10 +239,12 @@ void mexFunction( int nlhs, mxArray *plhs[],
             printf("replanning took %f seconds\n", t_plan);
 
             //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
+            traj_vector.push_back(arm_current);
             for(int t_wait = t; t_wait < (t+=(int) floor(t_plan)); t_wait++){
                 traj_vector.push_back(arm_current);
+                t++;
             }
-            t += (int) floor(t_plan);
+            // t += (int) floor(t_plan);
 
             //reset arm_next and next_plan_step:
             arm_next = arm_current;
@@ -266,8 +268,9 @@ void mexFunction( int nlhs, mxArray *plhs[],
             printf("reached GOAL !!!!!!!!!!\n");
             break;
         }
+    printf("length of path is %d\n",traj_vector.size());
+    printf("time t is at %d\n",t);
     }
-
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> time_span = t2 - t1;
     double time = time_span.count()/1000.0;

@@ -45,6 +45,8 @@ public:
     bool interpolate(const std::vector<double> &start,const std::vector<double> &end);
     void updateMap(double *map);
     int IsValidArmConfiguration(std::vector<double> angles,bool checkCollision);
+    void printAngles(std::vector<double> angles);
+
 
 
 protected:
@@ -73,6 +75,5 @@ protected:
     void returnPathToMex(const std::vector<std::vector<double>>& path,double ***plan,int *planlength);
     double getPathCost(const std::vector<std::vector<double>>& path);
     bool checkGoalAndStartForCollision();
-    void printAngles(std::vector<double> angles);
     std::vector<double> getRandomAngleConfig();
 };
