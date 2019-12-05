@@ -175,7 +175,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         maplayer_inflated = &map_inflated[layer_index];
         planner_inflated.updateMap(maplayer_inflated);
 
-        if(plan.size()==0){
+        if(plan.size()==0 && planner_inflated.IsValidArmConfiguration(arm_current,true)){
             break;
         }
 
