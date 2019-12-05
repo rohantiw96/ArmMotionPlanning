@@ -44,18 +44,18 @@
 
 bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm_current, double maxjntspeed, std::vector<double> &next_plan, int numofDOFs)
 {
-    double scale_factor = 1;
+    double scale_factor = 1.;
     for(int idx=0; idx < numofDOFs; idx++){
-        arm_next[idx] = next_plan[idx] - arm_current[idx];
-        if(abs(arm_next[idx]) > maxjntspeed){
-            double new_factor = maxjntspeed / arm_next[idx];
+        double delta = next_plan[idx] - arm_current[idx];
+        if(abs(delta) > maxjntspeed){
+            double new_factor = maxjntspeed / delta;
             if(new_factor < scale_factor){
                 scale_factor = new_factor;
             }
         }
     }
     for(int idx=0; idx < numofDOFs; idx++){
-        arm_next[idx] = arm_current[idx] + arm_next[idx]*scale_factor;
+        arm_next[idx] = arm_current[idx] + (next_plan[idx] - arm_current[idx])*scale_factor;
     }
 
     if(scale_factor == 1){
@@ -153,7 +153,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     // LAZY PRM
     // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
-    
     
     std::chrono::high_resolution_clock::time_point t_startplan = std::chrono::high_resolution_clock::now();
     planner.getFirstPlan(plan);
