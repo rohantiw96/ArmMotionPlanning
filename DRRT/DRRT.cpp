@@ -186,7 +186,7 @@ void DRRT::getFirstPlan(std::vector<std::vector<double>> &plan){
     if(reachedGoal) {
         printf("BackTracking\n");
         plan = getPath(arm_start_,arm_goal_);
-        total_cost_ = getPathCost(path);
+        total_cost_ = getPathCost(plan);
         // printf("Total Cost %f\n",total_cost_);
     }
     else{

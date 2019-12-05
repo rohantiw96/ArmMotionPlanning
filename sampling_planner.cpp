@@ -31,6 +31,7 @@ bool SamplingPlanners::interpolate(const std::vector<double> &start,const std::v
             angles.push_back(start[j]+ delta[j] * i);
         }
         if (!IsValidArmConfiguration(angles,true)){
+            printAngles(angles);
             return false;
         }
     }
