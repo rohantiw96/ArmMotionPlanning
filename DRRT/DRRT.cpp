@@ -49,9 +49,9 @@ std::vector<double> DRRT::biasedAngleSampling(const double bias_probability,cons
   return angles;
 }
 
-void DRRT::addNode(const std::vector<double>& parent,const std::vector<double>& child){
-    tree_[child] = parent;
-    child_map_[parent].push_back(child);
+void DRRT::addNode(const std::vector<double> parent,const std::vector<double> child){
+        tree_[child] = parent;
+        child_map_[parent].push_back(child);
 }
 
 std::vector<double> DRRT::interpolateBetweenNodes(const std::vector<double>& start,const std::vector<double>& end){
@@ -91,8 +91,9 @@ std::vector<std::vector<double> > DRRT::getPath(const std::vector<double>& start
     while(tree_[q_current] != goal_angles){
         // printf("Angles: ");
         // for(const auto& n:q_current){
-        //     printf("%f ",n);
+        //     printf("%f\n",n);
         // }
+        // printf("Printed\n");
         path.push_back(q_current);
         q_current = tree_[q_current];
     }
@@ -115,20 +116,24 @@ void DRRT::deleteEdge(const std::vector<double>& parent,const std::vector<double
         }
     }
     tree_.erase(child);
+    if(tree_.find(child) != tree_.end()){
+        printf("Not Deleted\n");
+    }
 }
 
-void DRRT::deleteAllChildNodes(const std::vector<double>& parent){
+void DRRT::deleteAllChildNodes(const std::vector<double> parent){
     std::vector<double> current = parent;
     std::queue<std::vector<double>> que;
-    que.push(parent);
+    que.push(current);
     while(!que.empty()){
-        std::vector<double> current = que.front();
+        current = que.front();
+        tree_.erase(current);
         que.pop();
         for(const auto n:child_map_[parent]){
             tree_.erase(n);
             que.push(n);
         }
-        child_map_[parent].clear();
+        child_map_.erase(parent);
     } 
 }
 

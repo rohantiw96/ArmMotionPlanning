@@ -21,14 +21,14 @@ class DRRT: public SamplingPlanners{
         std::unordered_map<std::vector<double>,bool,container_hash<std::vector<double> > > invalid_nodes_;
         std::vector<double> findNearestNeighbor(const std::vector<double> &q_rand);
         std::vector<double> extend(const std::vector<double> &q_start,const std::vector<double> &q_end);
-        void addNode(const std::vector<double>& parent,const std::vector<double>& child);
+        void addNode(const std::vector<double> parent,const std::vector<double> child);
         bool inGoalRegion(const std::vector<double> &angles);
         std::vector<std::vector<double> > getPath(const std::vector<double>& start_angles,const std::vector<double>& goal_angles);
         std::vector<double> biasedAngleSampling(const double goal_bias_probability,const std::vector<double>& node);
         std::vector<double> interpolateBetweenNodes(const std::vector<double>& start,const std::vector<double>& end);
         void invalidateNodes();
         void trimNodes();
-        void deleteAllChildNodes(const std::vector<double>& parent);
+        void deleteAllChildNodes(const std::vector<double> parent);
         void deleteEdge(const std::vector<double>& parent,const std::vector<double> child);
         bool regrowTree(const std::vector<double> current_angle);
 };
