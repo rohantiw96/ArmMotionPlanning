@@ -17,7 +17,6 @@ SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::
 void SamplingPlanners::updateMap(double *map)
 {
   map_ = map;
-  printf("updated map\n");
 }
 
 bool SamplingPlanners::interpolate(const std::vector<double> &start,const std::vector<double> &end){
@@ -31,7 +30,6 @@ bool SamplingPlanners::interpolate(const std::vector<double> &start,const std::v
             angles.push_back(start[j]+ delta[j] * i);
         }
         if (!IsValidArmConfiguration(angles,true)){
-            printAngles(angles);
             return false;
         }
     }
