@@ -131,7 +131,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //TODO: implement this and return to matlab instead of plan
     std::vector<std::vector<double>> traj_vector{arm_start};
     
-    
     //map
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();    
     double* maplayer = &map[2500];
