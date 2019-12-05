@@ -141,7 +141,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //Tunable parameters for run planner
     int lookahead = 10;
     double maxjntspeed = 0.3;
-    int backtrack_steps = 5;
+    int backtrack_steps = 3;
 
     //params for DRRT
     double epsilon = 0.5;
@@ -273,7 +273,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         }
 
         if(!run_planner.IsValidArmConfiguration(arm_current, true)){
-            printf("ARM IS IN COLLISION WITH MAP");
+            printf("ARM IS IN COLLISION WITH MAP\n");
             break;
         }
 

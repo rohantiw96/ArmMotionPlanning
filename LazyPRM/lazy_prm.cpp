@@ -1,4 +1,5 @@
 #include "lazy_prm.h"
+
 struct Node
 {
     std::vector<double> angles_;
