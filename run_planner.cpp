@@ -230,9 +230,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
             }
             
             printf("REPLANNING\n");
+        
+            //update map
+            layer_index = layersize * t;
+            maplayer_inflated = &map_inflated[layer_index];
+            planner.updateMap(maplayer_inflated);
+
             plan.clear();
             t_startplan = std::chrono::high_resolution_clock::now();
-            planner.updateMap(maplayer_inflated);
             planner.replan(plan, arm_current);
             printf("Total length %ld\n",plan.size());
             t_endplan = std::chrono::high_resolution_clock::now();
