@@ -143,7 +143,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     
     //Tunable parameters for run planner
     int lookahead = 5;
-    double maxjntspeed = 0.2;
+    double maxjntspeed = 0.3;
     int backtrack_steps = 2;
 
     //params for DRRT
@@ -254,7 +254,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
             //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
             traj_vector.push_back(arm_current);
             replanned_vector.push_back(1);
-            for(int t_wait = t; t_wait < (t+=(int) floor(t_plan)); t_wait++){
+            int t_end = t+(int)floor(t_plan);
+            for(int t_wait = t; t_wait < t_end; t_wait++){
                 traj_vector.push_back(arm_current);
                 replanned_vector.push_back(1);
                 t++;
