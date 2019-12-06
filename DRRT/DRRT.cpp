@@ -88,6 +88,7 @@ bool DRRT::inGoalRegion(const std::vector<double> &angles){
 std::vector<std::vector<double> > DRRT::getPath(const std::vector<double>& start_angles,const std::vector<double>& goal_angles){
     std::vector<std::vector<double> > path;
     std::vector<double> q_current = start_angles;
+    std::vector<double> q_child;
     while(tree_[q_current] != goal_angles){
         // printf("Angles: ");
         // for(const auto& n:q_current){
@@ -95,7 +96,15 @@ std::vector<std::vector<double> > DRRT::getPath(const std::vector<double>& start
         // }
         // printf("Printed\n");
         path.push_back(q_current);
+        q_child = q_current;
         q_current = tree_[q_current];
+        // auto itr = std::find(child_map_[q_current].begin(),child_map_[q_current].end(),q_child);
+        // if(itr != std::end(child_map_[q_current])){
+        //     printf("Found the Child\n");
+        // }
+        // else{
+        //     printf("Did Not Find the Child WTF\n");
+        // }
     }
     path.push_back(goal_angles);
     return path;
@@ -110,28 +119,32 @@ int DRRT::returnNumberOfVertices(){
 }
 
 void DRRT::deleteEdge(const std::vector<double>& parent,const std::vector<double> child){
-    for (int i=0;i<child_map_[parent].size();i++){
-        if (child_map_[parent][i] == child){
-            child_map_[parent].erase(child_map_[parent].begin()+i);
-        }
+    // for (int i=0;i<child_map_[parent].size();i++){
+    //     if (child_map_[parent][i] == child){
+    //         child_map_[parent].erase(child_map_[parent].begin()+i);
+    //     }
+    // }
+    auto itr = std::find(child_map_[parent].begin(),child_map_[parent].end(),child);
+    if(itr != std::end(child_map_[parent])){
+        child_map_[parent].erase(itr);
     }
-    tree_.erase(child);
-    if(tree_.find(child) != tree_.end()){
-        printf("Not Deleted\n");
+    else{
+        printf("Cannot Find WTF\n");
     }
+    // tree_.erase(child);
 }
 
 void DRRT::deleteAllChildNodes(const std::vector<double> parent){
     std::vector<double> current = parent;
     std::queue<std::vector<double>> que;
     que.push(current);
+    tree_.erase(current);
     while(!que.empty()){
         current = que.front();
-        tree_.erase(current);
         que.pop();
         for(const auto n:child_map_[parent]){
-            tree_.erase(n);
             que.push(n);
+            tree_.erase(n);
         }
         child_map_.erase(parent);
     } 
@@ -238,6 +251,7 @@ bool DRRT::regrowTree(const std::vector<double> current_angle){
 void DRRT::replan(std::vector<std::vector<double>> &plan,const std::vector<double>& current_angle){
     printf("REPLANNING DRRT\n");
     invalidateNodes();
+    printf("Invalid Nodes %ld\n",invalid_nodes_.size());
     printf("Invalidated Nodes\n");
     trimNodes();
     printf("Trimed Nodes\n");
