@@ -3,6 +3,7 @@
 #include <time.h>
 #include "include/sampling_planner.h"
 #include "LazyPRM/lazy_prm.h"
+#include "RRTConnect/rrtconnect.h"
 #include "DRRT/DRRT.h"
 // #include "RRTConn/rrt_conn.h"
 #include <iostream>
@@ -148,7 +149,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
     int max_iterations = 10000;
-    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+    // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+    RRTConnect planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
 
     // LAZY PRM
     // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
@@ -189,9 +191,9 @@ void mexFunction( int nlhs, mxArray *plhs[],
         for(int t_future = 0; t_future < lookahead; t_future++){
             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
             printf("arm next is\n");
-            planner.printAngles(arm_next);
+            // planner.printAngles(arm_next);
             printf("arm future is\n");
-            planner.printAngles(arm_future);
+            // planner.printAngles(arm_future);
             notcollision = planner.interpolate(arm_future, arm_next); 
             printf("look ahead\n");
             printf("result of not collision %d\n",notcollision);

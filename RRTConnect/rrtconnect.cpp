@@ -47,6 +47,7 @@ std::vector<double> RRTConnect::biasedAngleSampling(const double bias_probabilit
   std::vector<double> angles;
   if (distribution_goal_selection_(bias_generator_) > bias_probability*100){
     for(int i=0;i<numofDOFs_;i++){
+
       angles.push_back(angle_distribution_(generator_));
     }
   }
@@ -97,7 +98,7 @@ std::vector<double> RRTConnect::extendNode(std::vector<double> q_new,const bool 
         addNode(q_near,collision_free_configeration,is_goal);
         return collision_free_configeration;
     }
-    return std::vector<double>{};   
+    return q_near;   
 }
 
 std::vector<double> RRTConnect::joinNode(std::vector<double> q_exteded,const bool is_goal){
@@ -107,7 +108,7 @@ std::vector<double> RRTConnect::joinNode(std::vector<double> q_exteded,const boo
         addNode(q_near,collision_free_configeration,is_goal);
         return collision_free_configeration;
     }
-    return std::vector<double>{};
+    return q_near;
 }
 
 std::vector<std::vector<double> > RRTConnect::getPath(const std::vector<double> &angles){
@@ -141,21 +142,23 @@ void RRTConnect::getFirstPlan(std::vector<std::vector<double>> &plan){
     std::vector<double> collision_free_configeration;
     std::vector<double> collision_free_configeration_other;
     std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
-    std::vector<std::vector<double>> path_to_goal;
+    std::vector<std::vector<double>> path_to_goal = std::vector<std::vector<double>>{};
     bool is_goal = false;
     int j = 0;
     if (!checkGoalAndStartForCollision()){
         while(!reachedGoal){
-            if (is_goal)
+            if (is_goal){
                 q_new = biasedAngleSampling(bias_probability_,arm_start_);
-            else
+            }
+            else{
                 q_new = biasedAngleSampling(bias_probability_,arm_goal_);
-
+            }
             collision_free_configeration = extendNode(q_new,is_goal);
             if (!collision_free_configeration.empty()){
                 collision_free_configeration_other = joinNode(collision_free_configeration,!is_goal);
                 if (!collision_free_configeration_other.empty()){
                     if(collision_free_configeration == collision_free_configeration_other){
+                        printf("Got a path\n");
                         reachedGoal = true;
                     }
                 }
@@ -169,10 +172,21 @@ void RRTConnect::getFirstPlan(std::vector<std::vector<double>> &plan){
         }
     }
     if(reachedGoal) {
-        path = getPath(collision_free_configeration);
+        // printAngles(collision_free_configeration);
+        printAngles(tree_goal_[collision_free_configeration_other]);
+        printf("Goal\n");
+        printAngles(arm_goal_);
+        printf("Getting Plan from Start\n");
+        printf("%d\n",tree_.size());
+        plan = getPath(collision_free_configeration);
+        printf("%d\n",plan.size());
+        printf("Getting Plan from Goal\n");
         path_to_goal = getPathToGoal(collision_free_configeration);
-        path.insert(path.end(), path_to_goal.begin(), path_to_goal.end());
-        total_cost_ = getPathCost(path);
+        printf("%d\n",tree_goal_.size());
+        printf("%d\n",path_to_goal.size());
+        printf("Got Plan from Goal\n");
+        plan.insert(plan.end(), path_to_goal.begin(), path_to_goal.end());
+        // total_cost_ = getPathCost(path);
     }
     else{
         total_cost_ = 0;
