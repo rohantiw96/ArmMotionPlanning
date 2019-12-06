@@ -165,10 +165,6 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
             start_neighbor = findNearestNeighbor(arm_start_);
 
         goal_neighbor = findNearestNeighbor(arm_goal_);
-        // printf("start closest\n");
-        // printAngles(start_neighbor);
-        // printf("goal closests\n");
-        // printAngles(goal_neighbor);
         came_from_.clear();
         final_path.clear();
         if (comp_map.find(goal_neighbor)==comp_map.end() || comp_map.find(start_neighbor)==comp_map.end())
@@ -258,6 +254,7 @@ void LAZYPRM::getFirstPlan(std::vector<std::vector<double>> &plan){
     total_cost_= 0;
     if (!checkGoalAndStartForCollision()){
         buildRoadMap();
+        comp_map_original = comp_map;
         plan =  getShortestPath();
         if (plan.size() > 0)
         {
@@ -273,6 +270,7 @@ void LAZYPRM::getFirstPlan(std::vector<std::vector<double>> &plan){
 void LAZYPRM::replan(std::vector<std::vector<double>> &plan,const std::vector<double>& current_angle){
     arm_start_ = current_angle;
     std::vector<std::vector<double>> path = std::vector<std::vector<double>>{};
+    comp_map = comp_map_original;
     if (!checkGoalAndStartForCollision()){
         plan =  getShortestPath();
         if (plan.size() == 0)

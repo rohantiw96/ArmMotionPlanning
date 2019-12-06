@@ -1,0 +1,1 @@
+runtest('Maps/map8.mat','Maps/map8_infl.mat',[pi/8 3*pi/4 pi 0.9*pi 1.5*pi],[pi/2 pi/2 pi/2 pi/4 pi/2],0)

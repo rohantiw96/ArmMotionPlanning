@@ -14,6 +14,7 @@ class LAZYPRM: public SamplingPlanners{
         int returnNumberOfVertices();
     private:
         component_map comp_map;
+        component_map comp_map_original;
         double epsilon_;
         int num_iteration_;
         int num_samples_;
