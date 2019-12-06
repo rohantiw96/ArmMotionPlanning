@@ -71,21 +71,6 @@ bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm
     }
 }
 
-<<<<<<< HEAD
-=======
-
-// void update_maps(int t, int t_size, int layer_size, double* outer_map, double* inner_map, SamplingPlanners &outer_planner, LAZYPRM &inner_planner){
-//     int layer_index = layer_size * (t % t_size);
-        
-//     //update map
-//     double* outer_layer = &outer_map[layer_index];
-//     double* inner_layer = &inner_map[layer_index];
-//     outer_planner.updateMap(outer_layer);
-//     inner_planner.updateMap(inner_layer);
-// }
-
-
->>>>>>> debugDRRT
 static void planner(
         int planner_id,
         double*	map,
@@ -199,10 +184,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double success = 0;
     //loop through all time steps
     for(int t=1; t < 1000; t++){
-<<<<<<< HEAD
-=======
-        // update_maps(t, t_size, layersize, map, map_inflated, run_planner, planner);
->>>>>>> debugDRRT
         
         //update map
         layer_index = layersize * (t%t_size);
@@ -220,13 +201,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
         else {
             for(int t_future = 0; t_future < lookahead; t_future++){
                 bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-<<<<<<< HEAD
-=======
-                // printf("arm next is\n");
-                // planner.printAngles(arm_next);
-                // printf("arm future is\n");
-                // planner.printAngles(arm_future);
->>>>>>> debugDRRT
                 notcollision = planner.interpolate(arm_future, arm_next); 
                 if(!notcollision){
                     printf("COLLISION FOUND\n");
@@ -281,12 +255,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
             replanning_times.push_back(t_plan);
             //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
             traj_vector.push_back(arm_current);
-<<<<<<< HEAD
             replanned_vector.push_back(1);
             int t_end = t+(int)floor(t_plan);
-=======
-            int t_end = (t+(int) floor(t_plan));
->>>>>>> debugDRRT
             for(int t_wait = t; t_wait < t_end; t_wait++){
                 traj_vector.push_back(arm_current);
                 replanned_vector.push_back(1);
