@@ -16,7 +16,7 @@ hold on;
 x = zeros(size(armplan,2)+1, 1);
 y = zeros(size(armplan,2)+1, 1);
 x(1) = size(maps, 2)/2;
-a = plot(x, y, 'c-');
+a = plot(x, y, 'c-', 'LineWidth', 8);
 
 %Text:
 txt = text(5,size(maps,1)-5, "Moving");
