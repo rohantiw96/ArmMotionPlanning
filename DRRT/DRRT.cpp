@@ -90,21 +90,8 @@ std::vector<std::vector<double> > DRRT::getPath(const std::vector<double>& start
     std::vector<double> q_current = start_angles;
     std::vector<double> q_child;
     while(tree_[q_current] != goal_angles){
-        // printf("Angles: ");
-        // for(const auto& n:q_current){
-        //     printf("%f\n",n);
-        // }
-        // printf("Printed\n");
         path.push_back(q_current);
-        q_child = q_current;
         q_current = tree_[q_current];
-        // auto itr = std::find(child_map_[q_current].begin(),child_map_[q_current].end(),q_child);
-        // if(itr != std::end(child_map_[q_current])){
-        //     printf("Found the Child\n");
-        // }
-        // else{
-        //     printf("Did Not Find the Child WTF\n");
-        // }
     }
     path.push_back(goal_angles);
     return path;
@@ -119,19 +106,10 @@ int DRRT::returnNumberOfVertices(){
 }
 
 void DRRT::deleteEdge(const std::vector<double>& parent,const std::vector<double> child){
-    // for (int i=0;i<child_map_[parent].size();i++){
-    //     if (child_map_[parent][i] == child){
-    //         child_map_[parent].erase(child_map_[parent].begin()+i);
-    //     }
-    // }
-    auto itr = std::find(child_map_[parent].begin(),child_map_[parent].end(),child);
+    auto itr = std::find(std::begin(child_map_[parent]),std::end(child_map_[parent]),child);
     if(itr != std::end(child_map_[parent])){
         child_map_[parent].erase(itr);
     }
-    else{
-        printf("Cannot Find WTF\n");
-    }
-    // tree_.erase(child);
 }
 
 void DRRT::deleteAllChildNodes(const std::vector<double> parent){
@@ -142,21 +120,16 @@ void DRRT::deleteAllChildNodes(const std::vector<double> parent){
     while(!que.empty()){
         current = que.front();
         que.pop();
-        for(const auto n:child_map_[parent]){
+        for(auto n:child_map_[current]){
             que.push(n);
             tree_.erase(n);
         }
-        child_map_.erase(parent);
+        child_map_.erase(current);
     } 
 }
 
 void DRRT::invalidateNodes(){
-    printf("Size of Tree %ld\n",tree_.size());
     for(const auto& n:tree_){
-        // if(!IsValidArmConfiguration(tree_[n],true))
-        //     invalid_nodes_[tree_[n]] = true;
-        // printf("Loop through Nodes\n");
-        // printf("Child Size %d and Parent Size %d\n",n.first.size(),n.second.size());
         if (!IsValidArmConfiguration(n.first,true))
         {
             invalid_nodes_[n.first] = true;
@@ -174,6 +147,7 @@ void DRRT::trimNodes(){
     }
 }
 void DRRT::getFirstPlan(std::vector<std::vector<double>> &plan){
+    printf("Planner\n");
     std::vector<double> q_rand;
     std::vector<double> q_near;
     std::vector<double> q_epilison;
@@ -203,8 +177,9 @@ void DRRT::getFirstPlan(std::vector<std::vector<double>> &plan){
     }
     if(reachedGoal) {
         printf("BackTracking\n");
+        printf("Tree Size Initially %ld\n",tree_.size());
         plan = getPath(arm_start_,arm_goal_);
-        total_cost_ = getPathCost(plan);
+        // total_cost_ = getPathCost(plan);
         // printf("Total Cost %f\n",total_cost_);
     }
     else{
@@ -218,9 +193,12 @@ bool DRRT::regrowTree(const std::vector<double> current_angle){
     std::vector<double> q_near;
     std::vector<double> q_epilison;
     std::vector<double> collision_free_configeration;
-    arm_start_ = current_angle;
     printf("Tree Size %ld\n",tree_.size());
     int count = 0;
+    if (tree_.find(arm_start_) != tree_.end()){
+        printf("Start was in the Tree Already\n");
+        return true;
+    }
     if (!checkGoalAndStartForCollision()){
         while(!reachedCurrentState){
             q_rand = biasedAngleSampling(bias_probability_,current_angle);
@@ -250,8 +228,13 @@ bool DRRT::regrowTree(const std::vector<double> current_angle){
 }
 void DRRT::replan(std::vector<std::vector<double>> &plan,const std::vector<double>& current_angle){
     printf("REPLANNING DRRT\n");
+    arm_start_ = current_angle;
+    if(checkGoalAndStartForCollision()){
+        printf("Goal in Collision, Returning Empty Path\n");
+        return;
+    }
+    invalid_nodes_.clear();
     invalidateNodes();
-    printf("Invalid Nodes %ld\n",invalid_nodes_.size());
     printf("Invalidated Nodes\n");
     trimNodes();
     printf("Trimed Nodes\n");

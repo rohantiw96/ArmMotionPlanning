@@ -187,133 +187,125 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int layer_index;
     bool notcollision;
     int future_plan_step;
-    int t = 2;
-    layer_index = layersize * (t%t_size);
-    maplayer = &map[layer_index];
-    maplayer_inflated = &map_inflated[layer_index];
-    run_planner.updateMap(maplayer);
-    planner.updateMap(maplayer_inflated);
-    plan.clear();
-    planner.replan(plan,arm_start);
     //loop through all time steps
-    // for(int t=1; t < 1000; t++){
-    //     // update_maps(t, t_size, layersize, map, map_inflated, run_planner, planner);
+    for(int t=1; t < 1000; t++){
+        // update_maps(t, t_size, layersize, map, map_inflated, run_planner, planner);
         
-    //     //update map
-    //     layer_index = layersize * (t%t_size);
-    //     maplayer = &map[layer_index];
-    //     maplayer_inflated = &map_inflated[layer_index];
-    //     run_planner.updateMap(maplayer);
-    //     planner.updateMap(maplayer_inflated);
+        //update map
+        layer_index = layersize * (t%t_size);
+        maplayer = &map[layer_index];
+        maplayer_inflated = &map_inflated[layer_index];
+        run_planner.updateMap(maplayer);
+        planner.updateMap(maplayer_inflated);
 
-    //     // Check for collisions in the future of trajectory
-    //     notcollision = true;
-    //     future_plan_step = next_plan_step;
-    //     if(plan.size() == 0){
-    //         notcollision = planner.IsValidArmConfiguration(arm_current, true);
-    //     }
-    //     else {
-    //         for(int t_future = 0; t_future < lookahead; t_future++){
-    //             bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-    //             // printf("arm next is\n");
-    //             // planner.printAngles(arm_next);
-    //             // printf("arm future is\n");
-    //             // planner.printAngles(arm_future);
-    //             notcollision = planner.interpolate(arm_future, arm_next); 
-    //             printf("look ahead\n");
-    //             printf("result of not collision %d\n",notcollision);
-    //             if(!notcollision){
-    //                 printf("COLLISION FOUND\n");
-    //                 break;
-    //             }
-    //             if(plan_step_reached && future_plan_step < plan.size()-1){
-    //                 future_plan_step++;
-    //             }
-    //             else if (plan_step_reached && future_plan_step >= plan.size()-1)
-    //             // if(future_plan_step == plan.size()-1)
-    //             {
-    //                 printf("broke out of look ahead\n");
-    //                 break;
-    //             }            
-    //             arm_next = arm_future;
-    //         }
-    //     }
+        // Check for collisions in the future of trajectory
+        notcollision = true;
+        future_plan_step = next_plan_step;
+        if(plan.size() == 0){
+            notcollision = planner.IsValidArmConfiguration(arm_current, true);
+        }
+        else {
+            for(int t_future = 0; t_future < lookahead; t_future++){
+                bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
+                // printf("arm next is\n");
+                // planner.printAngles(arm_next);
+                // printf("arm future is\n");
+                // planner.printAngles(arm_future);
+                notcollision = planner.interpolate(arm_future, arm_next); 
+                printf("look ahead\n");
+                printf("result of not collision %d\n",notcollision);
+                if(!notcollision){
+                    printf("COLLISION FOUND\n");
+                    break;
+                }
+                if(plan_step_reached && future_plan_step < plan.size()-1){
+                    future_plan_step++;
+                }
+                else if (plan_step_reached && future_plan_step >= plan.size()-1)
+                // if(future_plan_step == plan.size()-1)
+                {
+                    printf("broke out of look ahead\n");
+                    break;
+                }            
+                arm_next = arm_future;
+            }
+        }
 
-    //     //Backtrack if any future is in collision:
-    //     if(!notcollision){
-    //         int backtrack_idx = traj_vector.size()-2;
-    //         for(int b=0; b < backtrack_steps; b++){
-    //             printf("BACKTRACK\n");
-    //             if (arm_current == arm_start){
-    //                 arm_current = arm_current;
-    //             } else{
-    //                 arm_current = traj_vector[backtrack_idx];
-    //                 backtrack_idx--;
-    //             }
-    //             traj_vector.push_back(arm_current);
-    //             t++;
-    //         }
-    //     }
+        //Backtrack if any future is in collision:
+        if(!notcollision){
+            int backtrack_idx = traj_vector.size()-2;
+            for(int b=0; b < backtrack_steps; b++){
+                printf("BACKTRACK\n");
+                if (arm_current == arm_start){
+                    arm_current = arm_current;
+                } else{
+                    arm_current = traj_vector[backtrack_idx];
+                    backtrack_idx--;
+                }
+                traj_vector.push_back(arm_current);
+                t++;
+            }
+        }
 
-    //     //Increment if no collision
-    //     if(!notcollision || plan.size()==0){
-    //         printf("REPLANNING\n");
+        //Increment if no collision
+        if(!notcollision || plan.size()==0){
+            printf("REPLANNING\n");
         
-    //         //update map
-    //         layer_index = layersize * (t%t_size);
-    //         maplayer_inflated = &map_inflated[layer_index];
-    //         planner.updateMap(maplayer_inflated);
+            //update map
+            layer_index = layersize * (t%t_size);
+            maplayer_inflated = &map_inflated[layer_index];
+            planner.updateMap(maplayer_inflated);
 
-    //         plan.clear();
-    //         t_startplan = std::chrono::high_resolution_clock::now();
-    //         planner.replan(plan, arm_current);
-    //         printf("Total length %ld\n",plan.size());
-    //         t_endplan = std::chrono::high_resolution_clock::now();
-    //         std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
-    //         double t_plan = t_plandiff.count()/1000.0;
+            plan.clear();
+            t_startplan = std::chrono::high_resolution_clock::now();
+            planner.replan(plan, arm_current);
+            printf("Total length %ld\n",plan.size());
+            t_endplan = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> t_plandiff = t_endplan - t_startplan;
+            double t_plan = t_plandiff.count()/1000.0;
 
-    //         printf("replanning took %f seconds\n", t_plan);
+            printf("replanning took %f seconds\n", t_plan);
 
-    //         //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
-    //         traj_vector.push_back(arm_current);
-    //         int t_end = (t+(int) floor(t_plan));
-    //         for(int t_wait = t; t_wait < t_end; t_wait++){
-    //             traj_vector.push_back(arm_current);
-    //             t++;
-    //         }
-    //         // t += (int) floor(t_plan);
+            //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
+            traj_vector.push_back(arm_current);
+            int t_end = (t+(int) floor(t_plan));
+            for(int t_wait = t; t_wait < t_end; t_wait++){
+                traj_vector.push_back(arm_current);
+                t++;
+            }
+            // t += (int) floor(t_plan);
 
-    //         //reset arm_next and next_plan_step:
-    //         arm_next = arm_current;
-    //         next_plan_step = 1;
-    //     }
-    //     else{
-    //         printf("MOVING ARM\n");
-    //         bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
-    //         arm_current = arm_next;
+            //reset arm_next and next_plan_step:
+            arm_next = arm_current;
+            next_plan_step = 1;
+        }
+        else{
+            printf("MOVING ARM\n");
+            bool next_plan_reached = increment_arm(arm_next, arm_current, maxjntspeed, plan[next_plan_step], numofDOFs);
+            arm_current = arm_next;
 
-    //         //insert into arm_traj
-    //         traj_vector.push_back(arm_current);
+            //insert into arm_traj
+            traj_vector.push_back(arm_current);
 
-    //         //increment plan step if reached
-    //         if(next_plan_reached){
-    //             next_plan_step++;
-    //         }
-    //     }
+            //increment plan step if reached
+            if(next_plan_reached){
+                next_plan_step++;
+            }
+        }
 
-    //     if(!run_planner.IsValidArmConfiguration(arm_current, true)){
-    //         printf("ARM IS IN COLLISION WITH MAP\n");
-    //         break;
-    //     }
+        if(!run_planner.IsValidArmConfiguration(arm_current, true)){
+            printf("ARM IS IN COLLISION WITH MAP\n");
+            break;
+        }
 
-    //     if (arm_goal == arm_current)
-    //     {
-    //         printf("reached GOAL !!!!!!!!!!\n");
-    //         break;
-    //     }
-    // printf("length of path is %d\n",traj_vector.size());
-    // printf("time t is at %d\n",t);
-    // }
+        if (arm_goal == arm_current)
+        {
+            printf("reached GOAL !!!!!!!!!!\n");
+            break;
+        }
+    printf("length of path is %d\n",traj_vector.size());
+    printf("time t is at %d\n",t);
+    }
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> time_span = t2 - t1;
     double time = time_span.count()/1000.0;

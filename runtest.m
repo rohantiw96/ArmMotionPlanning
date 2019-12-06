@@ -10,7 +10,7 @@ close all;
 mapT = permute(map.map,[2 1 3]);
 map_inflatedT = permute(map_inflated.map, [2 1 3]);
 [armplan, armplanlength,time,cost,vertices] = armplanner(mapT,map_inflatedT, armstart, armgoal, planner_id); 
-fprintf(1, 'Arm trajectory of %d waypoints was returned\n', size(armplan,1));
+fprintf(1, 'Arm trajectory of %d  was returned\n', size(armplan,1));
 
 %Animate
 animate(map.map, armplan, size(armplan,1));
