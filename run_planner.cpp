@@ -143,7 +143,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     
     //Tunable parameters for run planner
     int lookahead = 5;
-    double maxjntspeed = 0.3;
+    double maxjntspeed = 0.2;
     int backtrack_steps = 2;
 
     //params for DRRT
