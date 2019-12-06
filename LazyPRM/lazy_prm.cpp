@@ -149,7 +149,7 @@ std::vector<std::vector<double>> LAZYPRM::backTrack(std::vector<double> node, st
 
 std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    double weight = 3;
+    double weight = 1;
     std::vector<std::vector<double>> final_path;
     std::vector<double> start_neighbor;
     std::vector<double> goal_neighbor;

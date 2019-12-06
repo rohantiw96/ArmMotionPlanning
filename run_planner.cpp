@@ -70,18 +70,6 @@ bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm
     }
 }
 
-
-void update_maps(int t, int t_size, int layer_size, double* outer_map, double* inner_map, SamplingPlanners &outer_planner, LAZYPRM &inner_planner){
-    int layer_index = layer_size * (t % t_size);
-        
-    //update map
-    double* outer_layer = &outer_map[layer_index];
-    double* inner_layer = &inner_map[layer_index];
-    outer_planner.updateMap(outer_layer);
-    inner_planner.updateMap(inner_layer);
-}
-
-
 static void planner(
         int planner_id,
         double*	map,
@@ -155,8 +143,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     
     //Tunable parameters for run planner
     int lookahead = 5;
-    double maxjntspeed = 0.3;
-    int backtrack_steps = 3;
+    double maxjntspeed = 0.2;
+    int backtrack_steps = 2;
 
     //params for DRRT
     double epsilon = 0.5;
@@ -193,8 +181,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     std::vector<double> replanning_times{};
     double success = 0;
     //loop through all time steps
-    for(int t=1; t < t_size; t++){
-        update_maps(t, t_size, layersize, map, map_inflated, run_planner, planner);
+    for(int t=1; t < 1000; t++){
         
         //update map
         layer_index = layersize * (t%t_size);
