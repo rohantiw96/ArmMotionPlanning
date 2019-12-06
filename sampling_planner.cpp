@@ -1,4 +1,5 @@
 #include "sampling_planner.h"
+#include "mex.h"
 
 #define LINKLENGTH_CELLS 10
 #define PI 3.141592654

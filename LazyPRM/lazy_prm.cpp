@@ -1,4 +1,5 @@
 #include "lazy_prm.h"
+
 struct Node
 {
     std::vector<double> angles_;
@@ -20,7 +21,7 @@ struct CompareNode
 LAZYPRM::LAZYPRM(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs)
     :SamplingPlanners(map,x_size,y_size,arm_start,arm_goal,numofDOFs){
         epsilon_ = 0.8;
-        num_iteration_ = 150000;
+        num_iteration_ = 200000;
         found_initial_path_ = false;
 }
 
@@ -156,6 +157,7 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     bool path_found;
     while (!found_collision_free_path)
     {
+        int dijkstra_limit = 0;
         path_found = false;
         if (comp_map.find(arm_start_) != comp_map.end())
             start_neighbor = arm_start_;
@@ -211,7 +213,11 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
         }
         else 
         {
+            dijkstra_limit++;
             printf("dijkstra did not reach goal\n");
+            if(dijkstra_limit > 100){
+                break;
+            }
         }
     }
     return final_path;
