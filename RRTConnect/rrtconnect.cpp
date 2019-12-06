@@ -173,9 +173,9 @@ void RRTConnect::getFirstPlan(std::vector<std::vector<double>> &plan){
     }
     if(reachedGoal) {
         // printAngles(collision_free_configeration);
-        printAngles(tree_goal_[collision_free_configeration_other]);
-        printf("Goal\n");
-        printAngles(arm_goal_);
+        // printAngles(tree_goal_[collision_free_configeration_other]);
+        // printf("Goal\n");
+        // printAngles(arm_goal_);
         printf("Getting Plan from Start\n");
         printf("%d\n",tree_.size());
         plan = getPath(collision_free_configeration);
@@ -194,6 +194,8 @@ void RRTConnect::getFirstPlan(std::vector<std::vector<double>> &plan){
 }
 void RRTConnect::replan(std::vector<std::vector<double>> &plan,const std::vector<double>& current_angle){
     arm_start_ = current_angle;
+    tree_.clear();
+    tree_goal_.clear();
     getFirstPlan(plan);
 }
 

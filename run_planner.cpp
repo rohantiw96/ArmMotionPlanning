@@ -68,15 +68,15 @@ bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm
 }
 
 
-void update_maps(int t, int t_size, int layer_size, double* outer_map, double* inner_map, SamplingPlanners &outer_planner, LAZYPRM &inner_planner){
-    int layer_index = layer_size * (t % t_size);
+// void update_maps(int t, int t_size, int layer_size, double* outer_map, double* inner_map, SamplingPlanners &outer_planner, LAZYPRM &inner_planner){
+//     int layer_index = layer_size * (t % t_size);
         
-    //update map
-    double* outer_layer = &outer_map[layer_index];
-    double* inner_layer = &inner_map[layer_index];
-    outer_planner.updateMap(outer_layer);
-    inner_planner.updateMap(inner_layer);
-}
+//     //update map
+//     double* outer_layer = &outer_map[layer_index];
+//     double* inner_layer = &inner_map[layer_index];
+//     outer_planner.updateMap(outer_layer);
+//     inner_planner.updateMap(inner_layer);
+// }
 
 
 static void planner(
@@ -160,8 +160,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     double interpolation_sampling = 50;
     double goal_bias_probability = 0.1;
     int max_iterations = 10000;
-    // DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
-    RRTConnect planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+    DRRT planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
+    // RRTConnect planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs,epsilon,interpolation_sampling,goal_bias_probability,max_iterations);
 
     // LAZY PRM
     // LAZYPRM planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
@@ -188,8 +188,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     bool notcollision;
     int future_plan_step;
     //loop through all time steps
-    for(int t=1; t < t_size; t++){
-        update_maps(t, t_size, layersize, map, map_inflated, run_planner, planner);
+    for(int t=1; t < 1000; t++){
+        // update_maps(t, t_size, layersize, map, map_inflated, run_planner, planner);
         
         //update map
         layer_index = layersize * (t%t_size);
@@ -207,10 +207,10 @@ void mexFunction( int nlhs, mxArray *plhs[],
         else {
             for(int t_future = 0; t_future < lookahead; t_future++){
                 bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-                printf("arm next is\n");
-                planner.printAngles(arm_next);
-                printf("arm future is\n");
-                planner.printAngles(arm_future);
+                // printf("arm next is\n");
+                // planner.printAngles(arm_next);
+                // printf("arm future is\n");
+                // planner.printAngles(arm_future);
                 notcollision = planner.interpolate(arm_future, arm_next); 
                 printf("look ahead\n");
                 printf("result of not collision %d\n",notcollision);
@@ -268,7 +268,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
             //Increment t by t_plan & update arm_traj to stay in place at the skipped times:
             traj_vector.push_back(arm_current);
-            for(int t_wait = t; t_wait < (t+=(int) floor(t_plan)); t_wait++){
+            int t_end = (t+(int) floor(t_plan));
+            for(int t_wait = t; t_wait < t_end; t_wait++){
                 traj_vector.push_back(arm_current);
                 t++;
             }
