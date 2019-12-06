@@ -8,6 +8,7 @@ figure
 
 %Map:
 m = imagesc(maps(:,:,1));
+m_size = size(maps, 3);
 axis square;
 hold on;
 
@@ -23,7 +24,7 @@ for t = 1:speed:armplanlength
         y(i+1) = y(i) + LINKLENGTH_CELLS*sin(armplan(floor(t),i));
     end
     
-    set(m, 'cdata', maps(:,:,floor(t)));
+    set(m, 'cdata', maps(:,:,mod(floor(t),m_size)+1));
     set(a, 'XData', x);
     set(a, 'YData', y);
     

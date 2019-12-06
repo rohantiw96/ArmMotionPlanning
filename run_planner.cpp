@@ -67,6 +67,17 @@ bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm
 }
 
 
+void update_maps(int t, int t_size, int layer_size, double* outer_map, double* inner_map, SamplingPlanners &outer_planner, LAZYPRM &inner_planner){
+    int layer_index = layer_size * (t % t_size);
+        
+    //update map
+    double* outer_layer = &outer_map[layer_index];
+    double* inner_layer = &inner_map[layer_index];
+    outer_planner.updateMap(outer_layer);
+    inner_planner.updateMap(inner_layer);
+}
+
+
 static void planner(
         int planner_id,
         double*	map,
@@ -176,13 +187,15 @@ void mexFunction( int nlhs, mxArray *plhs[],
     int future_plan_step;
     //loop through all time steps
     for(int t=1; t < t_size; t++){
-        layer_index = layersize * t;
+        update_maps(t, t_size, layersize, map, map_inflated, run_planner, planner);
         
         //update map
+        layer_index = layersize * (t%t_size);
         maplayer = &map[layer_index];
         maplayer_inflated = &map_inflated[layer_index];
         run_planner.updateMap(maplayer);
         planner.updateMap(maplayer_inflated);
+
         // Check for collisions in the future of trajectory
         notcollision = true;
         future_plan_step = next_plan_step;
@@ -237,7 +250,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
             printf("REPLANNING\n");
         
             //update map
-            layer_index = layersize * t;
+            layer_index = layersize * (t%t_size);
             maplayer_inflated = &map_inflated[layer_index];
             planner.updateMap(maplayer_inflated);
 
