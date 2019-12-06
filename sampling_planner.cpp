@@ -1,7 +1,7 @@
 #include "sampling_planner.h"
 // #include "mex.h"
 
-#define LINKLENGTH_CELLS 10
+#define LINKLENGTH_CELLS 15
 #define PI 3.141592654
 SamplingPlanners::SamplingPlanners(double *map,int x_size,int y_size,const std::vector<double> &arm_start,const std::vector<double> &arm_goal,int numofDOFs){
   map_ = map;

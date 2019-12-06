@@ -1,7 +1,7 @@
 function [] = animate(maps, armplan, armplanlength, replanned)
 
 close all;
-LINKLENGTH_CELLS=10;
+LINKLENGTH_CELLS=15;
 speed = 0.1;
 
 figure
@@ -21,7 +21,7 @@ a = plot(x, y, 'c-');
 %Text:
 txt = text(5,size(maps,1)-5, "Moving");
 txt.Color = 'r';
-txt.FontSize = 35;
+txt.FontSize = 25;
 
 for t = 1:speed:armplanlength
     for i = 1:size(armplan,2)

@@ -45,7 +45,7 @@
 #define PI 3.141592654
 
 //the length of each link in the arm (should be the same as the one used in runtest.m)
-#define LINKLENGTH_CELLS 10
+#define LINKLENGTH_CELLS 15
 
 bool increment_arm(std::vector<double>& arm_next, const std::vector<double>& arm_current, double maxjntspeed, std::vector<double> &next_plan, int numofDOFs)
 {
