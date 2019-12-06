@@ -49,9 +49,9 @@ std::vector<double> DRRT::biasedAngleSampling(const double bias_probability,cons
   return angles;
 }
 
-void DRRT::addNode(const std::vector<double>& parent,const std::vector<double>& child){
-    tree_[child] = parent;
-    child_map_[parent].push_back(child);
+void DRRT::addNode(const std::vector<double> parent,const std::vector<double> child){
+        tree_[child] = parent;
+        child_map_[parent].push_back(child);
 }
 
 std::vector<double> DRRT::interpolateBetweenNodes(const std::vector<double>& start,const std::vector<double>& end){
@@ -88,11 +88,8 @@ bool DRRT::inGoalRegion(const std::vector<double> &angles){
 std::vector<std::vector<double> > DRRT::getPath(const std::vector<double>& start_angles,const std::vector<double>& goal_angles){
     std::vector<std::vector<double> > path;
     std::vector<double> q_current = start_angles;
+    std::vector<double> q_child;
     while(tree_[q_current] != goal_angles){
-        // printf("Angles: ");
-        // for(const auto& n:q_current){
-        //     printf("%f ",n);
-        // }
         path.push_back(q_current);
         q_current = tree_[q_current];
     }
@@ -109,36 +106,30 @@ int DRRT::returnNumberOfVertices(){
 }
 
 void DRRT::deleteEdge(const std::vector<double>& parent,const std::vector<double> child){
-    for (int i=0;i<child_map_[parent].size();i++){
-        if (child_map_[parent][i] == child){
-            child_map_[parent].erase(child_map_[parent].begin()+i);
-        }
+    auto itr = std::find(std::begin(child_map_[parent]),std::end(child_map_[parent]),child);
+    if(itr != std::end(child_map_[parent])){
+        child_map_[parent].erase(itr);
     }
-    tree_.erase(child);
 }
 
-void DRRT::deleteAllChildNodes(const std::vector<double>& parent){
+void DRRT::deleteAllChildNodes(const std::vector<double> parent){
     std::vector<double> current = parent;
     std::queue<std::vector<double>> que;
-    que.push(parent);
+    que.push(current);
+    tree_.erase(current);
     while(!que.empty()){
-        std::vector<double> current = que.front();
+        current = que.front();
         que.pop();
-        for(const auto n:child_map_[parent]){
-            tree_.erase(n);
+        for(auto n:child_map_[current]){
             que.push(n);
+            tree_.erase(n);
         }
-        child_map_[parent].clear();
+        child_map_.erase(current);
     } 
 }
 
 void DRRT::invalidateNodes(){
-    printf("Size of Tree %ld\n",tree_.size());
     for(const auto& n:tree_){
-        // if(!IsValidArmConfiguration(tree_[n],true))
-        //     invalid_nodes_[tree_[n]] = true;
-        // printf("Loop through Nodes\n");
-        // printf("Child Size %d and Parent Size %d\n",n.first.size(),n.second.size());
         if (!IsValidArmConfiguration(n.first,true))
         {
             invalid_nodes_[n.first] = true;
@@ -156,6 +147,7 @@ void DRRT::trimNodes(){
     }
 }
 void DRRT::getFirstPlan(std::vector<std::vector<double>> &plan){
+    printf("Planner\n");
     std::vector<double> q_rand;
     std::vector<double> q_near;
     std::vector<double> q_epilison;
@@ -185,8 +177,9 @@ void DRRT::getFirstPlan(std::vector<std::vector<double>> &plan){
     }
     if(reachedGoal) {
         printf("BackTracking\n");
+        printf("Tree Size Initially %ld\n",tree_.size());
         plan = getPath(arm_start_,arm_goal_);
-        total_cost_ = getPathCost(plan);
+        // total_cost_ = getPathCost(plan);
         // printf("Total Cost %f\n",total_cost_);
     }
     else{
@@ -200,9 +193,12 @@ bool DRRT::regrowTree(const std::vector<double> current_angle){
     std::vector<double> q_near;
     std::vector<double> q_epilison;
     std::vector<double> collision_free_configeration;
-    arm_start_ = current_angle;
     printf("Tree Size %ld\n",tree_.size());
     int count = 0;
+    if (tree_.find(arm_start_) != tree_.end()){
+        printf("Start was in the Tree Already\n");
+        return true;
+    }
     if (!checkGoalAndStartForCollision()){
         while(!reachedCurrentState){
             q_rand = biasedAngleSampling(bias_probability_,current_angle);
@@ -232,6 +228,12 @@ bool DRRT::regrowTree(const std::vector<double> current_angle){
 }
 void DRRT::replan(std::vector<std::vector<double>> &plan,const std::vector<double>& current_angle){
     printf("REPLANNING DRRT\n");
+    arm_start_ = current_angle;
+    if(checkGoalAndStartForCollision()){
+        printf("Goal in Collision, Returning Empty Path\n");
+        return;
+    }
+    invalid_nodes_.clear();
     invalidateNodes();
     printf("Invalidated Nodes\n");
     trimNodes();
