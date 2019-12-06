@@ -139,7 +139,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     SamplingPlanners run_planner(map,x_size,y_size,arm_start,arm_goal,numofDOFs);
     
     //Tunable parameters for run planner
-    int lookahead = 10;
+    int lookahead = 5;
     double maxjntspeed = 0.3;
     int backtrack_steps = 3;
 
@@ -192,13 +192,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         else {
             for(int t_future = 0; t_future < lookahead; t_future++){
                 bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-                printf("arm next is\n");
-                planner.printAngles(arm_next);
-                printf("arm future is\n");
-                planner.printAngles(arm_future);
                 notcollision = planner.interpolate(arm_future, arm_next); 
-                printf("look ahead\n");
-                printf("result of not collision %d\n",notcollision);
                 if(!notcollision){
                     printf("COLLISION FOUND\n");
                     break;
@@ -209,7 +203,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
                 else if (plan_step_reached && future_plan_step >= plan.size()-1)
                 // if(future_plan_step == plan.size()-1)
                 {
-                    printf("broke out of look ahead\n");
                     break;
                 }            
                 arm_next = arm_future;
