@@ -142,7 +142,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //Tunable parameters for run planner
     int lookahead = 10;
     double maxjntspeed = 0.3;
-    int backtrack_steps = 2;
+    int backtrack_steps = 3;
 
     //params for DRRT
     double epsilon = 0.5;
@@ -188,51 +188,63 @@ void mexFunction( int nlhs, mxArray *plhs[],
         // Check for collisions in the future of trajectory
         notcollision = true;
         future_plan_step = next_plan_step;
-        for(int t_future = 0; t_future < lookahead; t_future++){
-            bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
-            printf("arm next is\n");
-            // planner.printAngles(arm_next);
-            printf("arm future is\n");
-            // planner.printAngles(arm_future);
-            notcollision = planner.interpolate(arm_future, arm_next); 
-            printf("look ahead\n");
-            printf("result of not collision %d\n",notcollision);
-            if(!notcollision){
-                printf("COLLISION FOUND\n");
-                break;
+        if(plan.size() == 0){
+            notcollision = planner.IsValidArmConfiguration(arm_current, true);
+        }
+        else {
+            for(int t_future = 0; t_future < lookahead; t_future++){
+                bool plan_step_reached = increment_arm(arm_future, arm_next, maxjntspeed, plan[future_plan_step], numofDOFs);
+                printf("arm next is\n");
+                planner.printAngles(arm_next);
+                printf("arm future is\n");
+                planner.printAngles(arm_future);
+                notcollision = planner.interpolate(arm_future, arm_next); 
+                printf("look ahead\n");
+                printf("result of not collision %d\n",notcollision);
+                if(!notcollision){
+                    printf("COLLISION FOUND\n");
+                    break;
+                }
+                if(plan_step_reached && future_plan_step < plan.size()-1){
+                    future_plan_step++;
+                }
+                else if (plan_step_reached && future_plan_step >= plan.size()-1)
+                // if(future_plan_step == plan.size()-1)
+                {
+                    printf("broke out of look ahead\n");
+                    break;
+                }            
+                arm_next = arm_future;
             }
-            if(plan_step_reached && future_plan_step < plan.size()-1){
-                future_plan_step++;
-            }
-            else if (plan_step_reached && future_plan_step >= plan.size()-1)
-            // if(future_plan_step == plan.size()-1)
-            {
-                printf("broke out of look ahead\n");
-                break;
-            }            
-            arm_next = arm_future;
         }
 
-        //Increment if no collision
-        if(!notcollision || plan.size()==0){
-            // Check if arm_current is in collision
-
-            //Backtrack first:
+        //Backtrack if any future is in collision:
+        if(!notcollision){
+            int backtrack_idx = traj_vector.size()-2;
             for(int b=0; b < backtrack_steps; b++){
                 printf("BACKTRACK\n");
                 if (arm_current == arm_start){
                     arm_current = arm_current;
                 } else{
-                    arm_current = traj_vector[t-1-b];
+                    arm_current = traj_vector[backtrack_idx];
+                    backtrack_idx--;
                 }
                 traj_vector.push_back(arm_current);
                 t++;
             }
-            
+        }
+
+        //Increment if no collision
+        if(!notcollision || plan.size()==0){
             printf("REPLANNING\n");
+        
+            //update map
+            layer_index = layersize * t;
+            maplayer_inflated = &map_inflated[layer_index];
+            planner.updateMap(maplayer_inflated);
+
             plan.clear();
             t_startplan = std::chrono::high_resolution_clock::now();
-            planner.updateMap(maplayer_inflated);
             planner.replan(plan, arm_current);
             printf("Total length %ld\n",plan.size());
             t_endplan = std::chrono::high_resolution_clock::now();
@@ -268,7 +280,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
         }
 
         if(!run_planner.IsValidArmConfiguration(arm_current, true)){
-            printf("ARM IS IN COLLISION WITH MAP");
+            printf("ARM IS IN COLLISION WITH MAP\n");
             break;
         }
 
