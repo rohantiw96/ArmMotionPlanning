@@ -18,8 +18,8 @@ for i=1:num_of_samples
     first_planner_time_(i) = first_planner_time;
     success_(i) = success;
 end
-armplanlength_ave = mean(armplanlength_);
-replanning_time_ave = mean(replanning_time_);
-cost_ave = mean(cost_);
-first_planner_time_ave = mean(first_planner_time_);
-succes_ave = mean(success_);
+armplanlength_ave = mean(armplanlength_)
+replanning_time_ave = mean(replanning_time_)
+cost_ave = mean(cost_)
+first_planner_time_ave = mean(first_planner_time_)
+succes_ave = mean(success_)
