@@ -155,9 +155,9 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
     std::vector<double> goal_neighbor;
     bool found_collision_free_path = false;
     bool path_found;
+    int dijkstra_limit = 0;
     while (!found_collision_free_path)
     {
-        int dijkstra_limit = 0;
         path_found = false;
         if (comp_map.find(arm_start_) != comp_map.end())
             start_neighbor = arm_start_;
@@ -207,13 +207,18 @@ std::vector<std::vector<double>> LAZYPRM::getShortestPath(){
         {
             final_path = backTrack(goal_neighbor,start_neighbor,found_collision_free_path);
         }
-        else if (dijkstra_limit < 100)
+        else
         {
             dijkstra_limit++;
-            printf("dijkstra did not reach goal\n");
-            if(dijkstra_limit > 100){
-                break;
+            printf("dijkstra did not reach goal: %d\n", dijkstra_limit);
+            if(dijkstra_limit > 50){
+                std::vector<std::vector<double>> zero;
+                return zero;
             }
+        }
+        if(dijkstra_limit >= 50){
+            std::vector<std::vector<double>> zero;
+            return zero;
         }
     }
     return final_path;

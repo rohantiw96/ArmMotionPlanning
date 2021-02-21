@@ -18,5 +18,5 @@ fprintf(1, 'Arm trajectory of %d  was returned\n', size(armplan,1));
 
 >>>>>>> debugDRRT
 %Animate
-animate(map.map, armplan, size(armplan,1));
+animate(map.map, armplan, size(armplan,1), replanned);
 end
